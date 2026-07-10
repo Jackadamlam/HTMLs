@@ -1013,6 +1013,7 @@ function range(a,b){const r=[];for(let i=a;i<=b;i++)r.push(i);return r}
 
 function renderBeyer(el){
   let html=`<div class="page-title"><span class="icon">📖</span> 拜厄教材</div>`;
+  html+=`<div style="margin-bottom:20px"><a href="pdf/beyer.pdf" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:14px">📄 打开完整教材 PDF（精解版）</a></div>`;
   BEYER_SECTIONS.forEach((sec,si)=>{
     html+=`<div class="section-title">${sec.name}</div>`;
     html+=`<div class="thumb-grid">`;
