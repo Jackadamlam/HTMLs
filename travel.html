@@ -1,0 +1,1115 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开元心旅行 - 山水自驾环游图</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Noto Serif SC', 'STSong', 'SimSun', 'KaiTi', serif;
+            background: #f7f2e8;
+            color: #3c2415;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(139,90,43,0.04) 0%, transparent 70%),
+                radial-gradient(ellipse at 80% 20%, rgba(139,90,43,0.03) 0%, transparent 70%);
+        }
+        
+        .header {
+            background: linear-gradient(180deg, #faf6ef 0%, #f0e8d8 100%);
+            padding: 18px 30px;
+            text-align: center;
+            border-bottom: 2px solid #c4a97d;
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+            background: 
+                radial-gradient(ellipse 80px 25px at 15% 100%, rgba(139,105,20,0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 60px 18px at 35% 100%, rgba(139,105,20,0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 100px 30px at 55% 100%, rgba(139,105,20,0.10) 0%, transparent 70%),
+                radial-gradient(ellipse 70px 22px at 75% 100%, rgba(139,105,20,0.07) 0%, transparent 70%),
+                radial-gradient(ellipse 90px 28px at 90% 100%, rgba(139,105,20,0.09) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .header::after {
+            content: '';
+            position: absolute; bottom: -6px; left: 20%; right: 20%; height: 1px;
+            background: linear-gradient(90deg, transparent, #c4a97d, transparent);
+        }
+        .header h1 {
+            font-size: 1.8em;
+            color: #5c3d1a;
+            font-weight: 700;
+            letter-spacing: 4px;
+        }
+        .header .subtitle { color: #8b7355; margin-top: 6px; font-size:0.88em; letter-spacing: 1px; }
+        .header .stamp {
+            display: inline-block;
+            border: 2px solid #c41e3a;
+            color: #c41e3a;
+            padding: 2px 10px;
+            font-size: 0.75em;
+            transform: rotate(-3deg);
+            margin-left: 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        
+        .container { display: flex; height: calc(100vh - 90px); }
+        
+        .sidebar {
+            width: 360px;
+            min-width: 360px;
+            background: #faf7f0;
+            overflow-y: auto;
+            padding: 14px;
+            border-right: 1px solid #d4c5a9;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.04);
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #c4a97d; border-radius: 3px; }
+        
+        .filter-section {
+            background: #fffef9;
+            border: 1px solid #e0d5c0;
+            border-radius: 2px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .filter-title {
+            color: #5c3d1a;
+            font-size: 1em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px dotted #c4a97d;
+            letter-spacing: 2px;
+        }
+        
+        .season-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+        .season-btn {
+            padding: 5px 11px;
+            border: 1px solid #c4a97d;
+            background: #fdfbf6;
+            color: #5c3d1a;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-size: 0.8em;
+            font-family: inherit;
+        }
+        .season-btn:hover { background: #f0e6d2; border-color: #8b6914; }
+        .season-btn.active {
+            background: #8b6914;
+            color: #fffef9;
+            border-color: #8b6914;
+            font-weight: bold;
+        }
+        
+        .route-section { margin-top: 6px; }
+        .route-card {
+            background: #fffef9;
+            border: 1px solid #e0d5c0;
+            border-radius: 3px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid #e0d5c0;
+        }
+        .route-card:hover { background: #f5efe0; border-left-color: #c4a97d; }
+        .route-card.active {
+            border-left-color: #8b6914;
+            background: linear-gradient(90deg, #f5efe0 0%, #fffef9 100%);
+            box-shadow: inset 0 0 20px rgba(139,105,20,0.06);
+        }
+        .route-card h3 { color: #5c3d1a; font-size: 0.9em; margin-bottom: 3px; letter-spacing: 1px; }
+        .route-card .route-info { font-size: 0.76em; color: #8b7355; }
+        .route-card .route-tag {
+            display: inline-block;
+            padding: 1px 7px;
+            color: #c41e3a;
+            border: 1px solid #c41e3a60;
+            font-size: 0.68em;
+            margin-top: 3px;
+            letter-spacing: 1px;
+            transform: rotate(-1deg);
+        }
+        
+        .spots-list { margin-top: 6px; }
+        .spot-item {
+            background: #fffef9;
+            border: 1px solid #e8dfce;
+            border-radius: 2px;
+            padding: 9px 10px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .spot-item:hover { background: #f5efe0; border-color: #c4a97d; }
+        .spot-icon {
+            width: 32px; min-width: 32px; height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1em;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        .spot-details h4 { color: #3c2415; font-size: 0.85em; }
+        .spot-details p { font-size: 0.72em; color: #8b7355; margin-top: 2px; line-height: 1.35; }
+        
+        #map { flex: 1; height: 100%; background: #f0e8d8; }
+        
+        .leaflet-popup-content-wrapper {
+            background: #fffef9 !important;
+            color: #3c2415 !important;
+            border-radius: 4px !important;
+            border: 1px solid #c4a97d !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+        }
+        .leaflet-popup-tip { background: #fffef9 !important; }
+        .popup-title { color: #5c3d1a; font-weight: bold; font-size: 1.05em; margin-bottom: 5px; letter-spacing: 1px; }
+        .popup-info { font-size: 0.85em; line-height: 1.6; }
+        .popup-highlight { color: #8b6914; font-weight: bold; }
+        
+        .legend {
+            position: absolute; bottom: 24px; right: 16px;
+            background: #fdfbf6f0; padding: 12px 14px;
+            border-radius: 2px; border: 1px solid #c4a97d;
+            z-index: 1000; box-shadow: 0 1px 6px rgba(139,105,20,0.06);
+        }
+        .legend h4 { color: #5c3d1a; margin-bottom: 8px; font-size:0.85em; letter-spacing: 2px; border-bottom:1px dotted #c4a97d; padding-bottom:4px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 0.76em; }
+        .legend-color { width: 16px; height: 16px; min-width: 16px; border-radius: 3px; }
+        .legend-color.large { width: 18px; height: 18px; min-width: 18px; }
+        
+        .info-panel {
+            position: absolute; top: 90px; right: 16px;
+            background: #fdfbf6f5; padding: 18px 16px;
+            border-radius: 2px; border: 1px solid #c4a97d;
+            width: 290px; max-height: 60vh; overflow-y: auto;
+            z-index: 1000; display: none;
+            box-shadow: 0 2px 12px rgba(139,105,20,0.08);
+        }
+        .info-panel.show { display: block; }
+        .info-panel h3 { color: #5c3d1a; margin-bottom: 10px; font-size:0.9em; letter-spacing:2px; border-bottom:1px dotted #c4a97d; padding-bottom:6px; }
+        .info-panel .day-item {
+            background: #fffef9; padding: 10px 12px; border-radius: 2px;
+            margin-bottom: 6px; border-left: 2px solid #c4a97d;
+        }
+        .info-panel .day-title { color: #8b6914; font-weight: bold; font-size:0.8em; }
+        .info-panel .day-content { font-size: 0.78em; margin-top: 3px; line-height: 1.5; color: #5c3d1a; }
+        
+        .map-watermark {
+            position: absolute; bottom: 80px; left: 16px;
+            z-index: 1000; font-size: 0.72em; color: #c4a97d;
+            pointer-events: none; writing-mode: vertical-rl;
+            letter-spacing: 3px; opacity: 0.5;
+        }
+        
+        @media (max-width: 768px) {
+            .header { padding: 10px 16px; }
+            .header h1 { font-size: 1.15em; letter-spacing: 2px; }
+            .header .subtitle { font-size: 0.72em; margin-top: 3px; }
+            .header .stamp { font-size: 0.6em; padding: 1px 6px; }
+
+            .container { flex-direction: column; height: calc(100vh - 56px); position: relative; }
+
+            .sidebar {
+                position: fixed; top: 0; left: 0; bottom: 0;
+                width: 85vw; max-width: 360px; z-index: 2000;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.12);
+                padding: 12px;
+                padding-top: 56px;
+            }
+            .sidebar.open { transform: translateX(0); }
+
+            .sidebar-overlay {
+                position: fixed; inset: 0; background: rgba(60,36,21,0.3);
+                z-index: 1999; display: none;
+            }
+            .sidebar-overlay.show { display: block; }
+
+            .mobile-header {
+                display: flex; align-items: center;
+                position: fixed; top: 0; left: 0; right: 0;
+                height: 56px; z-index: 2001;
+                background: linear-gradient(180deg, #faf6ef 0%, #f0e8d8 100%);
+                border-bottom: 1.5px solid #c4a97d;
+                padding: 0 12px;
+            }
+            .mobile-menu-btn {
+                width: 40px; height: 40px; border: 1px solid #d4c5a9;
+                background: #fdfbf6; border-radius: 3px; cursor: pointer;
+                display: flex; flex-direction: column; align-items: center;
+                justify-content: center; gap: 4px; padding: 8px;
+                flex-shrink: 0;
+            }
+            .mobile-menu-btn span {
+                display: block; width: 18px; height: 2px;
+                background: #5c3d1a; border-radius: 1px;
+                transition: all 0.2s;
+            }
+            .mobile-menu-btn.active span:nth-child(1) { transform: rotate(45deg) translate(4px, 4px); }
+            .mobile-menu-btn.active span:nth-child(2) { opacity: 0; }
+            .mobile-menu-btn.active span:nth-child(3) { transform: rotate(-45deg) translate(4px, -4px); }
+            .mobile-title {
+                flex: 1; text-align: center; font-size: 0.95em;
+                color: #5c3d1a; font-weight: 700; letter-spacing: 2px;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            .mobile-stamp {
+                border: 1.5px solid #c41e3a; color: #c41e3a;
+                padding: 1px 6px; font-size: 0.6em; font-weight: bold;
+                letter-spacing: 1px; flex-shrink: 0;
+            }
+
+            #map { flex: 1; height: 100%; }
+
+            .legend {
+                bottom: 12px; right: 8px; padding: 8px 10px;
+                font-size: 0.85em;
+            }
+            .legend h4 { font-size: 0.78em; margin-bottom: 5px; }
+
+            .info-panel {
+                top: auto; bottom: 0; left: 0; right: 0;
+                width: 100%; max-height: 55vh;
+                border-radius: 8px 8px 0 0;
+                padding: 14px;
+                box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+            }
+            .info-panel h3 { font-size: 0.85em; }
+            .info-panel .day-item { padding: 8px 10px; }
+
+            .map-watermark { display: none; }
+
+            .filter-section { padding: 10px; margin-bottom: 8px; }
+            .filter-title { font-size: 0.88em; }
+            .season-btn { padding: 7px 10px; font-size: 0.78em; min-height: 34px; }
+            .route-card { padding: 10px; min-height: 52px; }
+            .route-card h3 { font-size: 0.88em; }
+            .route-card .route-info { font-size: 0.74em; }
+            .spot-item { padding: 10px; min-height: 52px; }
+            .spot-details h4 { font-size: 0.82em; }
+            .spot-details p { font-size: 0.7em; }
+
+            .leaflet-popup-content-wrapper { max-width: 280px !important; }
+            .popup-title { font-size: 0.92em !important; }
+            .popup-info { font-size: 0.8em !important; }
+
+            .header.desktop-header { display: none; }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-header { display: none; }
+            .sidebar-overlay { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header desktop-header">
+        <h1>开元心旅行 · 山水自驾环游图<span class="stamp">错峰出行</span></h1>
+        <p class="subtitle">B站UP主「开元心旅行」景点整理 · 世界遗产推荐 · 自驾环游路线</p>
+    </div>
+
+    <div class="mobile-header">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="mobile-title">山水自驾环游图</div>
+        <div class="mobile-stamp">错峰</div>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="filter-section">
+                <div class="filter-title">时令之选</div>
+                <div class="season-buttons">
+                    <button class="season-btn active" data-season="all">四季皆可</button>
+                    <button class="season-btn" data-season="spring">春 · 3-5月</button>
+                    <button class="season-btn" data-season="summer">夏 · 6-8月</button>
+                    <button class="season-btn" data-season="autumn">秋 · 9-11月</button>
+                    <button class="season-btn" data-season="winter">冬 · 12-2月</button>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">自驾路线 <span style="font-size:0.65em;color:#8b7355;font-weight:normal">再点可取消</span></div>
+                <div class="route-section">
+                    <div class="route-card" data-route="spring-route">
+                        <h3>一 · 川西赏花线</h3>
+                        <div class="route-info">成都 → 丹巴 → 四姑娘山 → 都江堰</div>
+                        <div class="route-tag">3月中 - 4月中</div>
+                    </div>
+                    <div class="route-card" data-route="summer-route">
+                        <h3>二 · 滇西深度线</h3>
+                        <div class="route-info">成都 → 稻城 → 香格里拉 → 梅里 → 大理 → 泸沽湖</div>
+                        <div class="route-tag">5月中 - 6月中</div>
+                    </div>
+                    <div class="route-card" data-route="xinjiang-route">
+                        <h3>三 · 伊犁草原环线</h3>
+                        <div class="route-info">乌鲁木齐 → 赛里木湖 → 伊犁草原</div>
+                        <div class="route-tag">5月中 - 6月初</div>
+                    </div>
+                    <div class="route-card" data-route="qinghai-route">
+                        <h3>四 · 青甘大环线</h3>
+                        <div class="route-info">西宁 → 青海湖 → 茶卡 → 敦煌 → 张掖</div>
+                        <div class="route-tag">6月下 - 7月上</div>
+                    </div>
+                    <div class="route-card" data-route="autumn-route">
+                        <h3>五 · 北疆秋色线</h3>
+                        <div class="route-info">乌鲁木齐 → 喀纳斯 → 禾木</div>
+                        <div class="route-tag">9月中 - 10月初</div>
+                    </div>
+                    <div class="route-card" data-route="guizhou-route">
+                        <h3>六 · 贵州秘境线</h3>
+                        <div class="route-info">贵阳 → 黄果树 → 万峰林 → 荔波</div>
+                        <div class="route-tag">7月 - 9月</div>
+                    </div>
+                    <div class="route-card" data-route="eastchina-route">
+                        <h3>七 · 徽赣春色线</h3>
+                        <div class="route-info">杭州 → 黄山 → 宏村 → 婺源 → 三清山 → 景德镇</div>
+                        <div class="route-tag">3月下 - 4月中</div>
+                    </div>
+                    <div class="route-card" data-route="central-route">
+                        <h3>八 · 中原古都线</h3>
+                        <div class="route-info">西安 → 华山 → 洛阳 → 开封</div>
+                        <div class="route-tag">4-5月 / 9-10月</div>
+                    </div>
+                    <div class="route-card" data-route="fujian-route">
+                        <h3>九 · 闽南世遗线</h3>
+                        <div class="route-info">厦门 → 土楼 → 泉州 → 武夷山 → 霞浦</div>
+                        <div class="route-tag">11月 - 次年2月</div>
+                    </div>
+                    <div class="route-card" data-route="guangxi-route">
+                        <h3>十 · 桂西南山水线</h3>
+                        <div class="route-info">桂林 → 龙脊 → 阳朔 → 崇左</div>
+                        <div class="route-tag">4-6月 / 10-12月</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">景点一览 <span id="spotCount" style="font-size:0.7em;color:#8b7355;font-weight:normal"></span></div>
+                <div class="spots-list" id="spotsList"></div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+        
+        <div class="legend">
+            <h4>图 例</h4>
+            <div class="legend-item"><div class="legend-color" style="background:#c95b6b;"></div><span>春季最佳</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#5a9e8f;"></div><span>夏季最佳</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#c4943a;"></div><span>秋季最佳</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:#6b7db3;"></div><span>冬季最佳</span></div>
+            <div style="margin-top:6px;padding-top:4px;border-top:1px dotted #c4a97d;">
+                <div class="legend-item"><div class="legend-color large" style="background:#5a9e8f;border:3px solid #c4943a;"></div><span>双色环=多季可去</span></div>
+            </div>
+        </div>
+        
+        <div class="map-watermark">山水之间</div>
+        
+        <div class="info-panel" id="infoPanel">
+            <h3 id="panelTitle">行程详情</h3>
+            <div id="panelContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        const map = L.map('map', {
+            center: [35.0, 105.0],
+            zoom: 5,
+            zoomControl: true,
+            attributionControl: false
+        });
+        
+        // 浅色水墨风底图
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(map);
+        
+        // ========== 中国国界线 ==========
+        fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
+            .then(r => r.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: { color: '#8b4513', weight: 2, opacity: 0.7, fillColor: '#f5f0e0', fillOpacity: 0.08 }
+                }).addTo(map);
+            })
+            .catch(() => {
+                fetch('https://geo.datav.aliyun.com/areas_v3/bound/geojson')
+                    .then(r => r.json())
+                    .then(data => {
+                        const f = data.features.find(x => x.properties.name === '中国' || x.properties.adcode === 100000);
+                        if (f) L.geoJSON(f, { style: { color: '#8b4513', weight: 2, opacity: 0.7, fillColor: '#f5f0e0', fillOpacity: 0.08 } }).addTo(map);
+                    }).catch(()=>{});
+            });
+        
+        // ========== 景点数据 ==========
+        const seasonColors = { spring: '#c95b6b', summer: '#5a9e8f', autumn: '#c4943a', winter: '#6b7db3' };
+        
+        const spots = [
+            // ===== 顶级推荐 =====
+            { name: '大理/丽江', lat: 25.6, lng: 100.2, region: '云南', tier: 'primary',
+              seasons: [
+                  { season: 'winter', type: 'primary', time: '10月底-3月初', highlights: '海鸥迁来、玉龙雪山有雪' },
+                  { season: 'summer', type: 'secondary', time: '6-8月', highlights: '泸沽湖水性杨花盛开' }
+              ]},
+            { name: '香格里拉', lat: 27.8, lng: 99.7, region: '云南', tier: 'primary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '5月中-6月中', highlights: '杜鹃花开(普达措/白马雪山)' },
+                  { season: 'winter', type: 'secondary', time: '10月底-次年4月中', highlights: '日照金山概率大' }
+              ]},
+            { name: '西双版纳', lat: 22.0, lng: 100.8, region: '云南', tier: 'primary',
+              seasons: [
+                  { season: 'winter', type: 'primary', time: '11月初-2月底', highlights: '温度适宜、热带植物园' },
+                  { season: 'spring', type: 'secondary', time: '4月13-15日', highlights: '泼水节' }
+              ]},
+            { name: '元阳梯田', lat: 23.2, lng: 102.8, region: '云南', tier: 'primary',
+              seasons: [{ season: 'winter', type: 'primary', time: '12月中旬-4月上旬', highlights: '灌水期镜面梯田最美' }]},
+            { name: '普者黑', lat: 24.1, lng: 104.1, region: '云南', tier: 'primary',
+              seasons: [{ season: 'summer', type: 'primary', time: '7月初-8月初', highlights: '荷花盛开' }]},
+            { name: '伊犁草原', lat: 43.5, lng: 82.5, region: '新疆', tier: 'primary',
+              seasons: [{ season: 'summer', type: 'primary', time: '5月初-8月20日', highlights: '喀拉峻/那拉提草原最绿' }]},
+            { name: '赛里木湖', lat: 44.6, lng: 81.2, region: '新疆', tier: 'primary',
+              seasons: [{ season: 'summer', type: 'primary', time: '5月中旬-8月中旬', highlights: '湖水最蓝、5月中-6月初最纯净' }]},
+            { name: '喀纳斯', lat: 48.7, lng: 87.0, region: '新疆', tier: 'primary',
+              seasons: [
+                  { season: 'autumn', type: 'primary', time: '9月中-10月初', highlights: '秋景绝美、彩林映湖' },
+                  { season: 'summer', type: 'secondary', time: '6月中-8月底', highlights: '草原翠绿、湖水清澈' }
+              ]},
+            { name: '禾木', lat: 48.6, lng: 87.4, region: '新疆', tier: 'primary',
+              seasons: [
+                  { season: 'autumn', type: 'primary', time: '9月中-10月初', highlights: '晨雾白桦林、秋色绝美' },
+                  { season: 'summer', type: 'secondary', time: '6-8月', highlights: '绿草如茵、星空璀璨' }
+              ]},
+            { name: '丹巴', lat: 30.9, lng: 101.9, region: '川西', tier: 'primary',
+              seasons: [{ season: 'spring', type: 'primary', time: '3月中旬', highlights: '桃花梨花盛开(花期半月)' }]},
+            { name: '稻城亚丁', lat: 29.0, lng: 100.3, region: '川西', tier: 'primary',
+              seasons: [
+                  { season: 'autumn', type: 'primary', time: '10月中-下旬', highlights: '秋景天花板、金黄草甸' },
+                  { season: 'summer', type: 'secondary', time: '7-8月', highlights: '草原翠绿、野花盛开' }
+              ]},
+            { name: '九寨沟', lat: 33.3, lng: 103.9, region: '川西', tier: 'primary',
+              seasons: [
+                  { season: 'autumn', type: 'primary', time: '10月中旬-11月上旬', highlights: '彩林映海子、五彩斑斓' },
+                  { season: 'winter', type: 'secondary', time: '12-2月', highlights: '蓝冰剔透、游客极少' }
+              ]},
+            { name: '四姑娘山', lat: 31.1, lng: 102.9, region: '川西', tier: 'primary',
+              seasons: [
+                  { season: 'autumn', type: 'primary', time: '10月中旬-11月上旬', highlights: '雪山彩林' },
+                  { season: 'winter', type: 'secondary', time: '12-2月', highlights: '雪峰壮丽、人少' }
+              ]},
+            { name: '兴义·万峰林', lat: 25.05, lng: 104.95, region: '贵州', tier: 'primary',
+              seasons: [
+                  { season: 'winter', type: 'primary', time: '1月中-2月底', highlights: '万峰林油菜花季' },
+                  { season: 'autumn', type: 'secondary', time: '8月中-9月初', highlights: '万峰林金色稻浪' },
+                  { season: 'spring', type: 'secondary', time: '春夏', highlights: '马岭河峡谷+探洞捡化石' }
+              ]},
+            { name: '黄果树瀑布', lat: 25.9, lng: 105.7, region: '贵州', tier: 'primary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '7月初-9月底', highlights: '丰水期瀑布最壮观' },
+                  { season: 'spring', type: 'secondary', time: '3-5月', highlights: '水量适中、人少' }
+              ]},
+            { name: '荔波小七孔', lat: 25.4, lng: 107.9, region: '贵州', tier: 'primary',
+              seasons: [{ season: 'summer', type: 'primary', time: '6-8月', highlights: '避暑戏水、瀑布壮观' }]},
+            { name: '林芝', lat: 29.7, lng: 94.4, region: '西藏', tier: 'primary',
+              seasons: [{ season: 'spring', type: 'primary', time: '3月25日-4月上旬', highlights: '雪山桃花(仅半月花期)' }]},
+            { name: '青海湖', lat: 36.9, lng: 100.2, region: '青甘', tier: 'primary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6月底-8月', highlights: '油菜花+湛蓝湖水' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '候鸟南飞、人少景美' }
+              ]},
+            { name: '敦煌', lat: 40.1, lng: 94.7, region: '青甘', tier: 'primary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '5-10月', highlights: '莫高窟/鸣沙山月牙泉' },
+                  { season: 'winter', type: 'secondary', time: '11-2月', highlights: '淡季人少、门票优惠' }
+              ]},
+            { name: '张掖丹霞', lat: 38.9, lng: 100.1, region: '青甘', tier: 'primary',
+              seasons: [{ season: 'summer', type: 'primary', time: '6-9月', highlights: '七彩丹霞色彩最艳' }]},
+            { name: '额济纳胡杨林', lat: 42.0, lng: 101.1, region: '西北', tier: 'primary',
+              seasons: [{ season: 'autumn', type: 'primary', time: '9月底-10月上旬', highlights: '金色胡杨(仅半月)' }]},
+            { name: '哈尔滨', lat: 45.8, lng: 126.5, region: '东北', tier: 'primary',
+              seasons: [{ season: 'winter', type: 'primary', time: '12月下旬-2月', highlights: '冰雪大世界' }]},
+            { name: '长白山', lat: 42.0, lng: 128.1, region: '东北', tier: 'primary',
+              seasons: [
+                  { season: 'autumn', type: 'primary', time: '9月下旬', highlights: '秋色绚烂' },
+                  { season: 'winter', type: 'secondary', time: '11月下旬-2月底', highlights: '滑雪温泉漂流雾凇' }
+              ]},
+            { name: '呼伦贝尔', lat: 49.2, lng: 119.7, region: '东北', tier: 'primary',
+              seasons: [{ season: 'summer', type: 'primary', time: '6月中旬-8月上旬', highlights: '辽阔草原' }]},
+            { name: '桂林龙脊梯田', lat: 25.8, lng: 110.1, region: '广西', tier: 'primary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '5月上-6月上', highlights: '镜面梯田(灌水插秧期)' },
+                  { season: 'autumn', type: 'secondary', time: '9月下旬-10月下旬', highlights: '金色稻浪' }
+              ]},
+            { name: '张家界', lat: 29.1, lng: 110.5, region: '湖南', tier: 'primary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '3月中-4月中', highlights: '春花云雾、人少' },
+                  { season: 'autumn', type: 'secondary', time: '9月下旬-10月中旬', highlights: '秋高气爽' }
+              ]},
+            { name: '景德镇', lat: 29.3, lng: 117.2, region: '江西', tier: 'primary',
+              seasons: [{ season: 'spring', type: 'primary', time: '3-5月', highlights: '陶瓷文化+春色' }]},
+            { name: '洛阳', lat: 34.6, lng: 112.5, region: '河南', tier: 'primary',
+              seasons: [{ season: 'spring', type: 'primary', time: '4月10-20日', highlights: '牡丹节(仅10天花期!)' }]},
+            { name: '茶卡盐湖', lat: 36.7, lng: 99.1, region: '青甘', tier: 'primary',
+              seasons: [{ season: 'summer', type: 'primary', time: '6-8月', highlights: '天空之镜最佳效果' }]},
+            
+            // ===== 次顶级/世界遗产 =====
+            { name: '黄山', lat: 30.1, lng: 118.2, region: '安徽', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '云海杜鹃、奇松怪石' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋高气爽、日出云海' }
+              ]},
+            { name: '宏村·西递', lat: 30.0, lng: 117.9, region: '安徽', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '3-4月', highlights: '油菜花映衬徽派建筑' },
+                  { season: 'autumn', type: 'secondary', time: '10-11月', highlights: '塔川秋色红叶' }
+              ]},
+            { name: '婺源篁岭', lat: 29.3, lng: 117.8, region: '江西', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '3月中-4月初', highlights: '万亩油菜花' },
+                  { season: 'autumn', type: 'secondary', time: '9-11月', highlights: '篁岭晒秋' }
+              ]},
+            { name: '三清山', lat: 28.9, lng: 118.1, region: '江西', tier: 'secondary',
+              seasons: [{ season: 'spring', type: 'primary', time: '4-5月', highlights: '云海杜鹃花岗岩峰林' }]},
+            { name: '武夷山', lat: 27.7, lng: 118.0, region: '福建', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '九曲溪竹筏、茶园青翠' },
+                  { season: 'autumn', type: 'secondary', time: '10-11月', highlights: '秋高气爽、岩茶飘香' }
+              ]},
+            { name: '福建土楼', lat: 24.6, lng: 117.0, region: '福建', tier: 'secondary',
+              seasons: [{ season: 'winter', type: 'primary', time: '11月-次年2月', highlights: '气候温暖、客家人文' }]},
+            { name: '泉州', lat: 24.9, lng: 118.6, region: '福建', tier: 'secondary',
+              seasons: [{ season: 'winter', type: 'primary', time: '11月-次年2月', highlights: '海丝起点、宗教博物馆' }]},
+            { name: '厦门鼓浪屿', lat: 24.45, lng: 118.07, region: '福建', tier: 'secondary',
+              seasons: [
+                  { season: 'winter', type: 'primary', time: '11月-次年3月', highlights: '气候宜人、万国建筑' },
+                  { season: 'spring', type: 'secondary', time: '4-5月', highlights: '花开满岛' }
+              ]},
+            { name: '霞浦滩涂', lat: 26.9, lng: 120.0, region: '福建', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-6月', highlights: '海带收获季、光影绝美' },
+                  { season: 'autumn', type: 'secondary', time: '10-12月', highlights: '紫菜养殖、日落滩涂' }
+              ]},
+            { name: '西安', lat: 34.3, lng: 108.9, region: '陕西', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '兵马俑/城墙/陕历博' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋高气爽逛古都' }
+              ]},
+            { name: '华山', lat: 34.5, lng: 110.1, region: '陕西', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '山花烂漫、险峰攀登' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋色险峰' }
+              ]},
+            { name: '龙门石窟', lat: 34.6, lng: 112.5, region: '河南', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '卢舍那大佛、世界遗产' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋日访古' }
+              ]},
+            { name: '嵩山少林寺', lat: 34.5, lng: 112.9, region: '河南', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '功夫表演、禅宗祖庭' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '少林武术节' }
+              ]},
+            { name: '云冈石窟', lat: 40.1, lng: 113.1, region: '山西', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '5-9月', highlights: '北魏石窟艺术瑰宝' },
+                  { season: 'autumn', type: 'secondary', time: '10月', highlights: '秋色佛国' }
+              ]},
+            { name: '平遥古城', lat: 37.2, lng: 112.2, region: '山西', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '晋商文化、完整古城' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '平遥摄影节' }
+              ]},
+            { name: '五台山', lat: 39.0, lng: 113.6, region: '山西', tier: 'secondary',
+              seasons: [{ season: 'summer', type: 'primary', time: '6-8月', highlights: '清凉避暑、佛教圣地' }]},
+            { name: '武当山', lat: 32.4, lng: 111.0, region: '湖北', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '道教圣地、古建群' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋色太极' }
+              ]},
+            { name: '神农架', lat: 31.7, lng: 110.7, region: '湖北', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6-8月', highlights: '避暑洗肺、原始森林' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '层林尽染' }
+              ]},
+            { name: '庐山', lat: 29.6, lng: 116.0, region: '江西', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6-8月', highlights: '避暑胜地、瀑布云海' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋色满山' }
+              ]},
+            { name: '峨眉山', lat: 29.6, lng: 103.5, region: '四川', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '杜鹃花海、金顶佛光' },
+                  { season: 'autumn', type: 'secondary', time: '10月', highlights: '秋色红叶' }
+              ]},
+            { name: '都江堰·青城山', lat: 31.0, lng: 103.6, region: '四川', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '水利奇迹+道教发源' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋高气爽' }
+              ]},
+            { name: '泸沽湖', lat: 27.7, lng: 100.8, region: '云南', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6-8月', highlights: '水性杨花盛开' },
+                  { season: 'winter', type: 'secondary', time: '10-11月', highlights: '海鸥迁来' }
+              ]},
+            { name: '梅里雪山', lat: 28.4, lng: 98.7, region: '云南', tier: 'secondary',
+              seasons: [{ season: 'winter', type: 'primary', time: '10月底-次年3月', highlights: '日照金山概率最高' }]},
+            { name: '崇左德天瀑布', lat: 22.8, lng: 106.7, region: '广西', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6-8月', highlights: '跨国瀑布、水量充沛' },
+                  { season: 'spring', type: 'secondary', time: '4-5月', highlights: '水量适中、人少' }
+              ]},
+            { name: '阳朔', lat: 24.8, lng: 110.5, region: '广西', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '烟雨漓江、山水画廊' },
+                  { season: 'autumn', type: 'secondary', time: '10-11月', highlights: '秋高气爽' }
+              ]},
+            { name: '涠洲岛', lat: 21.0, lng: 109.1, region: '广西', tier: 'secondary',
+              seasons: [{ season: 'winter', type: 'primary', time: '11月-次年3月', highlights: '气候温暖、火山海岛' }]},
+            { name: '望仙谷', lat: 28.7, lng: 117.9, region: '江西', tier: 'secondary',
+              seasons: [{ season: 'spring', type: 'primary', time: '4-5月', highlights: '悬崖民宿、仙侠世界' }]},
+            { name: '光雾山', lat: 32.5, lng: 107.0, region: '川北', tier: 'secondary',
+              seasons: [{ season: 'autumn', type: 'primary', time: '10月中-11月初', highlights: '红叶天花板、亚洲最大红叶区' }]},
+            { name: '甘南扎尕那', lat: 34.2, lng: 103.2, region: '甘南', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6月下旬-8月中旬', highlights: '草原花海、东方小瑞士' },
+                  { season: 'autumn', type: 'secondary', time: '9月', highlights: '层林尽染' }
+              ]},
+            { name: '景迈山', lat: 22.2, lng: 100.0, region: '云南', tier: 'secondary',
+              seasons: [
+                  { season: 'winter', type: 'primary', time: '11月-次年2月', highlights: '古茶林云海、世界遗产' },
+                  { season: 'spring', type: 'secondary', time: '3-4月', highlights: '春茶采摘' }
+              ]},
+            { name: '怒江大峡谷', lat: 26.0, lng: 98.9, region: '云南', tier: 'secondary',
+              seasons: [{ season: 'winter', type: 'primary', time: '11月-次年3月', highlights: '江水碧绿、原生态秘境' }]},
+            { name: '阿尔山', lat: 47.2, lng: 119.9, region: '内蒙古', tier: 'secondary',
+              seasons: [{ season: 'autumn', type: 'primary', time: '9月上旬-9月25日', highlights: '秋色绝美、天池林海' }]},
+            { name: '乌兰布统', lat: 42.5, lng: 117.2, region: '内蒙古', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6-8月', highlights: '草原越野、星空露营' },
+                  { season: 'autumn', type: 'secondary', time: '9月下旬', highlights: '金黄草原' }
+              ]},
+
+            // ===== 新增次顶级景点 =====
+            { name: '壶口瀑布', lat: 36.1, lng: 110.4, region: '山西/陕西', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '桃花汛水量大、彩虹频现' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋汛壮观' }
+              ]},
+            { name: '黄龙', lat: 32.7, lng: 103.8, region: '四川', tier: 'secondary',
+              seasons: [
+                  { season: 'autumn', type: 'primary', time: '9-10月', highlights: '五彩钙华池+彩林' },
+                  { season: 'summer', type: 'secondary', time: '6-8月', highlights: '水量充沛、绿意盎然' }
+              ]},
+            { name: '梵净山', lat: 27.9, lng: 108.7, region: '贵州', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '云海金顶、蘑菇石' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋高气爽、红叶' }
+              ]},
+            { name: '腾冲', lat: 25.0, lng: 98.5, region: '云南', tier: 'secondary',
+              seasons: [
+                  { season: 'autumn', type: 'primary', time: '11月中-12月初', highlights: '银杏村金黄、热海温泉' },
+                  { season: 'winter', type: 'secondary', time: '12-2月', highlights: '温泉暖冬、和顺古镇' }
+              ]},
+            { name: '喀什古城', lat: 39.5, lng: 75.9, region: '新疆', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '5-6月', highlights: '异域风情、帕米尔杏花' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋高气爽、胡杨金黄' }
+              ]},
+            { name: '拉萨·布达拉宫', lat: 29.7, lng: 91.1, region: '西藏', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6-9月', highlights: '含氧量高、雪顿节' },
+                  { season: 'spring', type: 'secondary', time: '4-5月', highlights: '人少、气候温和' }
+              ]},
+            { name: '纳木错', lat: 30.7, lng: 90.6, region: '西藏', tier: 'secondary',
+              seasons: [{ season: 'summer', type: 'primary', time: '6-9月', highlights: '天湖碧蓝、念青唐古拉雪山倒影' }]},
+            { name: '恩施大峡谷', lat: 30.3, lng: 109.5, region: '湖北', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '6-8月', highlights: '避暑、一炷香/屏山躲避峡' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋色峡谷' }
+              ]},
+            { name: '漠河', lat: 52.9, lng: 122.5, region: '黑龙江', tier: 'secondary',
+              seasons: [
+                  { season: 'winter', type: 'primary', time: '12-2月', highlights: '极寒体验、北极光概率最高' },
+                  { season: 'summer', type: 'secondary', time: '6-7月', highlights: '极昼、白夜现象' }
+              ]},
+            { name: '雾凇岛', lat: 43.9, lng: 126.5, region: '吉林', tier: 'secondary',
+              seasons: [{ season: 'winter', type: 'primary', time: '12月下旬-2月', highlights: '雾凇奇观、冰雪世界' }]},
+            { name: '泰山', lat: 36.2, lng: 117.1, region: '山东', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '4-5月', highlights: '日出云海、五岳之首' },
+                  { season: 'autumn', type: 'secondary', time: '9-10月', highlights: '秋高气爽登顶' }
+              ]},
+            { name: '织金洞', lat: 26.7, lng: 105.8, region: '贵州', tier: 'secondary',
+              seasons: [
+                  { season: 'summer', type: 'primary', time: '全年恒温16°', highlights: '中国溶洞之王、岩溶博物馆' }
+              ]},
+            { name: '凤凰古城', lat: 27.9, lng: 109.6, region: '湖南', tier: 'secondary',
+              seasons: [
+                  { season: 'spring', type: 'primary', time: '3-5月', highlights: '烟雨沱江、吊脚楼' },
+                  { season: 'autumn', type: 'secondary', time: '9-11月', highlights: '秋色古城' }
+              ]},
+        ];
+        
+        // ========== 路线数据（coords精确经过沿途景点） ==========
+        const routes = {
+            'spring-route': {
+                name: '一 · 川西赏花线',
+                // 成都(30.6,104.1)→丹巴(30.9,101.9)→四姑娘山(31.1,102.9)→都江堰(31.0,103.6)→成都
+                coords: [[30.6,104.1],[30.9,101.9],[31.1,102.9],[31.0,103.6],[30.6,104.1]],
+                color: '#c95b6b',
+                spotNames: ['丹巴','四姑娘山','都江堰·青城山'],
+                days: [
+                    { day:'D1-D2', content:'成都集合，宽窄巷子、锦里，品尝川味美食' },
+                    { day:'D3', content:'成都→丹巴（约300km），途经巴郎山，傍晚抵甲居藏寨' },
+                    { day:'D4', content:'丹巴全天：甲居藏寨赏桃花梨花，中路藏寨探访' },
+                    { day:'D5-D6', content:'丹巴→四姑娘山，双桥沟/长坪沟轻徒步' },
+                    { day:'D7', content:'四姑娘山→毕棚沟，高山湖泊+原始森林' },
+                    { day:'D8', content:'毕棚沟→都江堰，水利工程+青城山问道' },
+                    { day:'D9-D10', content:'都江堰→成都，自由活动/返程' }
+                ]
+            },
+            'summer-route': {
+                name: '二 · 滇西深度线',
+                // 成都→新都桥→稻城→香格里拉→梅里→大理→泸沽湖
+                coords: [[30.6,104.1],[30.1,101.5],[29.0,100.3],[27.8,99.7],[28.4,98.7],[25.6,100.2],[27.7,100.8]],
+                color: '#5a9e8f',
+                spotNames: ['稻城亚丁','香格里拉','梅里雪山','大理/丽江','泸沽湖'],
+                days: [
+                    { day:'D1', content:'成都→康定（约280km），翻越折多山' },
+                    { day:'D2-D3', content:'康定→新都桥→理塘→稻城（约430km）' },
+                    { day:'D4-D5', content:'稻城亚丁景区，洛绒牛场、牛奶海、五色海' },
+                    { day:'D6', content:'稻城→香格里拉（约330km），松赞林寺' },
+                    { day:'D7-D8', content:'香格里拉，普达措、独克宗古城' },
+                    { day:'D9-D10', content:'香格里拉→梅里雪山，等日照金山' },
+                    { day:'D11-D12', content:'梅里→大理，洱海环湖、双廊古镇' },
+                    { day:'D13', content:'大理→丽江，古城漫步、束河古镇' },
+                    { day:'D14-D15', content:'丽江→泸沽湖，水性杨花季/返程' }
+                ]
+            },
+            'xinjiang-route': {
+                name: '三 · 伊犁草原环线',
+                // 乌鲁木齐→赛里木湖→伊犁草原(那拉提)→乌鲁木齐
+                coords: [[43.8,87.6],[44.6,81.2],[43.5,82.5],[43.8,87.6]],
+                color: '#5a9e8f',
+                spotNames: ['伊犁草原','赛里木湖'],
+                days: [
+                    { day:'D1', content:'乌鲁木齐集合，国际大巴扎' },
+                    { day:'D2-D3', content:'乌鲁木齐→赛里木湖（约550km），环湖、湖边露营' },
+                    { day:'D4-D6', content:'赛里木湖→那拉提草原→喀拉峻草原' },
+                    { day:'D7-D8', content:'特克斯八卦城→夏塔古道轻徒步' },
+                    { day:'D9-D10', content:'昭苏→伊宁，薰衣草庄园、喀赞其民俗街' },
+                    { day:'D11-D12', content:'伊宁→独库公路北段→乌鲁木齐/返程' }
+                ]
+            },
+            'qinghai-route': {
+                name: '四 · 青甘大环线',
+                // 西宁→青海湖→茶卡→大柴旦→敦煌→嘉峪关→张掖→西宁
+                coords: [[36.6,101.8],[36.9,100.2],[36.7,99.1],[37.8,95.3],[40.1,94.7],[39.8,98.3],[38.9,100.1],[36.6,101.8]],
+                color: '#c4943a',
+                spotNames: ['青海湖','茶卡盐湖','敦煌','张掖丹霞'],
+                days: [
+                    { day:'D1', content:'西宁集合，塔尔寺' },
+                    { day:'D2-D3', content:'西宁→青海湖→茶卡盐湖（约300km）' },
+                    { day:'D4-D5', content:'茶卡→大柴旦翡翠湖→敦煌（约700km）' },
+                    { day:'D6-D7', content:'敦煌：莫高窟、鸣沙山月牙泉、沙漠露营' },
+                    { day:'D8', content:'敦煌→嘉峪关（约370km），天下第一雄关' },
+                    { day:'D9', content:'嘉峪关→张掖（约230km），七彩丹霞' },
+                    { day:'D10-D11', content:'张掖→祁连草原→门源→西宁（约340km）' },
+                    { day:'D12', content:'西宁返程' }
+                ]
+            },
+            'autumn-route': {
+                name: '五 · 北疆秋色线',
+                // 乌鲁木齐→可可托海→布尔津→喀纳斯→禾木
+                coords: [[43.8,87.6],[47.0,89.5],[47.7,86.9],[48.7,87.0],[48.6,87.4]],
+                color: '#c4943a',
+                spotNames: ['喀纳斯','禾木'],
+                days: [
+                    { day:'D1', content:'乌鲁木齐集合' },
+                    { day:'D2', content:'乌鲁木齐→S21沙漠公路→布尔津（约600km）' },
+                    { day:'D3-D5', content:'布尔津→喀纳斯，三湾徒步、观鱼台' },
+                    { day:'D6-D7', content:'喀纳斯→禾木，晨雾白桦林、禾木星空' },
+                    { day:'D8', content:'禾木→乌尔禾魔鬼城（约400km）' },
+                    { day:'D9-D10', content:'魔鬼城→赛里木湖环湖' },
+                    { day:'D11-D12', content:'赛里木湖→独库公路→乌鲁木齐/返程' }
+                ]
+            },
+            'guizhou-route': {
+                name: '六 · 贵州秘境线',
+                // 贵阳→黄果树→兴义万峰林→荔波→贵阳
+                coords: [[26.6,106.7],[25.9,105.7],[25.05,104.95],[25.4,107.9],[26.6,106.7]],
+                color: '#5a9e8f',
+                spotNames: ['兴义·万峰林','黄果树瀑布','荔波小七孔'],
+                days: [
+                    { day:'D1', content:'贵阳集合，甲秀楼、青云路夜市' },
+                    { day:'D2', content:'贵阳→黄果树瀑布（约130km），大瀑布+天星桥' },
+                    { day:'D3-D4', content:'黄果树→兴义万峰林（约200km），骑行、探洞' },
+                    { day:'D5', content:'兴义→马岭河峡谷（地球上最美的伤疤）' },
+                    { day:'D6', content:'兴义→中国天眼FAST→荔波（约450km）' },
+                    { day:'D7', content:'荔波小七孔全天：翠谷瀑布、水上森林' },
+                    { day:'D8', content:'荔波→贵阳，返程' }
+                ]
+            },
+            'eastchina-route': {
+                name: '七 · 徽赣春色线',
+                // 杭州→黄山→宏村→婺源→三清山→景德镇
+                coords: [[30.2,120.1],[30.1,118.2],[30.0,117.9],[29.3,117.8],[28.9,118.1],[29.3,117.2]],
+                color: '#c95b6b',
+                spotNames: ['黄山','宏村·西递','婺源篁岭','景德镇','三清山'],
+                days: [
+                    { day:'D1', content:'杭州集合，西湖、灵隐寺' },
+                    { day:'D2-D3', content:'杭州→黄山风景区（约280km），云谷索道上山' },
+                    { day:'D4', content:'黄山→宏村，南湖月沼、承志堂' },
+                    { day:'D5', content:'宏村→西递→婺源篁岭（约150km），赏油菜花' },
+                    { day:'D6-D7', content:'婺源→三清山（约100km），花岗岩峰林' },
+                    { day:'D8-D9', content:'三清山→景德镇，古窑民俗博览区、陶溪川' },
+                    { day:'D10', content:'景德镇返程' }
+                ]
+            },
+            'central-route': {
+                name: '八 · 中原古都线',
+                // 西安→华山→洛阳(龙门石窟)→登封(少林寺)→开封
+                coords: [[34.3,108.9],[34.5,110.1],[34.6,112.5],[34.5,112.9],[34.8,114.3]],
+                color: '#c4943a',
+                spotNames: ['西安','华山','洛阳','龙门石窟','嵩山少林寺'],
+                days: [
+                    { day:'D1-D2', content:'西安：兵马俑、城墙、陕历博、大唐不夜城' },
+                    { day:'D3-D4', content:'西安→华山（约120km），徒步/索道登顶' },
+                    { day:'D5', content:'华山→洛阳（约350km），龙门石窟卢舍那大佛' },
+                    { day:'D6', content:'洛阳：白马寺、洛阳博物馆、牡丹园(4月)' },
+                    { day:'D7-D8', content:'洛阳→嵩山少林寺（约60km），功夫表演' },
+                    { day:'D9-D10', content:'少林寺→郑州→开封，清明上河园/返程' }
+                ]
+            },
+            'fujian-route': {
+                name: '九 · 闽南世遗线',
+                // 厦门→土楼→泉州→武夷山→霞浦
+                coords: [[24.45,118.07],[24.6,117.0],[24.9,118.6],[27.7,118.0],[26.9,120.0]],
+                color: '#6b7db3',
+                spotNames: ['厦门鼓浪屿','福建土楼','泉州','武夷山','霞浦滩涂'],
+                days: [
+                    { day:'D1-D2', content:'厦门：鼓浪屿、环岛路、曾厝垵、沙坡尾' },
+                    { day:'D3', content:'厦门→南靖土楼（约140km），田螺坑、云水谣' },
+                    { day:'D4', content:'土楼→泉州（约200km），开元寺、西街、关岳庙' },
+                    { day:'D5', content:'泉州：清源山、蟳埔村、洛阳桥' },
+                    { day:'D6-D7', content:'泉州→武夷山（约400km），九曲溪竹筏、天游峰' },
+                    { day:'D8', content:'武夷山→霞浦（约300km），滩涂日落' },
+                    { day:'D9', content:'霞浦→福州/返程' }
+                ]
+            },
+            'guangxi-route': {
+                name: '十 · 桂西南山水线',
+                // 桂林→龙脊→阳朔→崇左
+                coords: [[25.3,110.3],[25.8,110.1],[24.8,110.5],[22.8,106.7]],
+                color: '#5a9e8f',
+                spotNames: ['桂林龙脊梯田','阳朔','崇左德天瀑布'],
+                days: [
+                    { day:'D1-D2', content:'桂林：象鼻山、两江四湖、漓江精华游' },
+                    { day:'D3-D4', content:'桂林→龙脊梯田（约80km），镜面梯田/金色稻浪' },
+                    { day:'D5', content:'龙脊→阳朔（约180km），遇龙河竹筏、西街' },
+                    { day:'D6-D7', content:'阳朔→崇左（约500km），德天跨国瀑布、明仕田园' },
+                    { day:'D8-D9', content:'崇左→北海→涠洲岛，火山海岛、天主教堂/返程' }
+                ]
+            }
+        };
+        
+        // ========== 交互逻辑 ==========
+        let markers = [], currentRoute = null, activeSeason = 'all', activeRouteKey = null;
+        
+        function createIcon(seasons, dimmed) {
+            const p = seasons.find(s => s.type === 'primary');
+            const mc = seasonColors[p.season];
+            const size = 14, bs = 3;
+            const op = dimmed ? '0.2' : '1';
+            const gf = dimmed ? 'grayscale(75%)' : 'none';
+            
+            if (seasons.length > 1) {
+                const os = seasons.find(s => s.type === 'secondary');
+                const oc = os ? seasonColors[os.season] : mc;
+                return L.divIcon({ className:'custom-marker',
+                    html: `<div style="width:${size+bs}px;height:${size+bs}px;background:${mc};border-radius:3px;border:${bs}px solid ${oc};box-shadow:0 0 6px ${mc}40;opacity:${op};filter:${gf};"></div>`,
+                    iconSize: [size+bs, size+bs], iconAnchor: [(size+bs)/2, (size+bs)/2] });
+            }
+            return L.divIcon({ className:'custom-marker',
+                html: `<div style="width:${size}px;height:${size}px;background:${mc};border-radius:3px;border:1px solid rgba(255,255,255,0.6);box-shadow:0 0 6px ${mc}40;opacity:${op};filter:${gf};"></div>`,
+                iconSize: [size, size], iconAnchor: [size/2, size/2] });
+        }
+        
+        function spotMatchesSeason(s) { return activeSeason === 'all' || s.seasons.some(ss => ss.season === activeSeason); }
+        
+        function addMarkers(all, dimSet) {
+            markers.forEach(m => map.removeLayer(m)); markers = [];
+            const ds = dimSet || new Set();
+            all.forEach(s => {
+                const dim = ds.has(s.name);
+                const sh = s.seasons.map(ss => {
+                    const lb = ss.type === 'primary' ? '最佳' : '推荐';
+                    const c = seasonColors[ss.season];
+                    const sn = {spring:'春',summer:'夏',autumn:'秋',winter:'冬'}[ss.season];
+                    return `<div style="margin:5px 0;padding:6px;background:rgba(0,0,0,0.02);border-radius:2px;border-left:3px solid ${c}">
+                        <span style="color:${c};font-weight:bold">${sn}季</span><span style="font-size:0.8em;opacity:0.6;margin-left:4px">${lb}</span><br>
+                        <span style="font-size:0.82em">🗓 ${ss.time}</span><br>
+                        <span style="font-size:0.82em">✨ ${ss.highlights}</span></div>`;
+                }).join('');
+                const mk = L.marker([s.lat, s.lng], { icon: createIcon(s.seasons, dim) }).addTo(map)
+                    .bindPopup(`<div class="popup-title">${s.name}</div><div class="popup-info"><span class="popup-highlight">📍 ${s.region}</span>${sh}</div>`);
+                markers.push(mk);
+            });
+        }
+        
+        function addRoute(rk) {
+            if (currentRoute) { map.removeLayer(currentRoute); currentRoute = null; }
+            if (!rk) return;
+            const r = routes[rk];
+            if (r && r.coords) {
+                currentRoute = L.polyline(r.coords, { color: r.color, weight: 3.5, opacity: 0.75, dashArray: '8, 8' }).addTo(map);
+                try { map.fitBounds(currentRoute.getBounds(), { padding: [50, 50] }); } catch(e) {}
+            }
+        }
+        
+        function updateSpotsList(all, dimSet) {
+            const list = document.getElementById('spotsList'), count = document.getElementById('spotCount');
+            const si = {spring:'🌸',summer:'☀️',autumn:'🍂',winter:'❄️'}, sn = {spring:'春',summer:'夏',autumn:'秋',winter:'冬'};
+            const ds = dimSet || new Set();
+            count.textContent = `（共 ${all.length} 处）`;
+            list.innerHTML = all.map(s => {
+                const dim = ds.has(s.name);
+                const tags = s.seasons.map(ss => {
+                    const bg = seasonColors[ss.season];
+                    const bd = ss.type === 'primary' ? '' : '<sup style="opacity:0.5">*</sup>';
+                    return `<span style="display:inline-block;padding:1px 5px;background:${bg}18;color:${bg};border-radius:2px;font-size:0.66em;margin-right:2px;border:1px solid ${bg}30">${si[ss.season]}${sn[ss.season]}${bd}</span>`;
+                }).join('');
+                const hls = s.seasons.map(ss => ss.highlights).join('；');
+                const ps = s.seasons.find(ss => ss.type === 'primary');
+                const dms = dim ? 'opacity:0.3;' : '';
+                return `<div class="spot-item" data-lat="${s.lat}" data-lng="${s.lng}" style="${dms}">
+                    <div class="spot-icon" style="background:${seasonColors[ps.season]}18;">${si[ps.season]}</div>
+                    <div class="spot-details"><h4>${s.name} <span style="font-size:0.7em;opacity:0.4">${s.region}</span></h4>
+                    <p>${hls}</p><div style="margin-top:3px">${tags}</div></div></div>`;
+            }).join('');
+            
+            document.querySelectorAll('.spot-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const lat = parseFloat(item.dataset.lat);
+                    const lng = parseFloat(item.dataset.lng);
+                    map.setView([lat, lng], 8);
+                    markers.forEach(m => {
+                        if (Math.abs(m.getLatLng().lat - lat) < 0.01 && Math.abs(m.getLatLng().lng - lng) < 0.01) {
+                            m.openPopup();
+                        }
+                    });
+                    if (window.innerWidth <= 768) setTimeout(() => {
+                        document.getElementById('sidebar').classList.remove('open');
+                        document.getElementById('sidebarOverlay').classList.remove('show');
+                        document.getElementById('mobileMenuBtn').classList.remove('active');
+                    }, 300);
+                });
+            });
+        }
+        
+        function updateInfoPanel(rk) {
+            const panel = document.getElementById('infoPanel');
+            if (!rk || !routes[rk]) { panel.classList.remove('show'); return; }
+            const r = routes[rk];
+            document.getElementById('panelTitle').textContent = r.name + ' · 详细行程';
+            document.getElementById('panelContent').innerHTML = r.days.map(d => `
+                <div class="day-item"><div class="day-title">${d.day}</div>
+                <div class="day-content">${d.content}</div></div>`).join('');
+            panel.classList.add('show');
+        }
+        
+        function refreshAll() {
+            const dimSet = new Set();
+            if (activeRouteKey && routes[activeRouteKey] && routes[activeRouteKey].spotNames) {
+                spots.forEach(s => { if (!routes[activeRouteKey].spotNames.includes(s.name)) dimSet.add(s.name); });
+            }
+            if (activeSeason !== 'all') {
+                spots.forEach(s => { if (!spotMatchesSeason(s)) dimSet.add(s.name); });
+            }
+            addMarkers(spots, dimSet);
+            updateSpotsList(spots, dimSet);
+            addRoute(activeRouteKey);
+        }
+        
+        document.querySelectorAll('.season-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.season-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeSeason = btn.dataset.season;
+                refreshAll();
+            });
+        });
+        
+        document.querySelectorAll('.route-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const rk = card.dataset.route;
+                if (activeRouteKey === rk) {
+                    card.classList.remove('active'); activeRouteKey = null;
+                } else {
+                    document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active'); activeRouteKey = rk;
+                }
+                updateInfoPanel(activeRouteKey);
+                refreshAll();
+            });
+        });
+        
+        map.on('dblclick', () => {
+            activeRouteKey = null;
+            document.querySelectorAll('.route-card').forEach(c => c.classList.remove('active'));
+            if (currentRoute) { map.removeLayer(currentRoute); currentRoute = null; }
+            map.setView([35.0, 105.0], 5);
+            refreshAll();
+        });
+        
+        refreshAll();
+        
+        // ========== 手机端侧边栏切换 ==========
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const menuBtn = document.getElementById('mobileMenuBtn');
+
+        function toggleSidebar() {
+            const isOpen = sidebar.classList.toggle('open');
+            overlay.classList.toggle('show', isOpen);
+            menuBtn.classList.toggle('active', isOpen);
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+            menuBtn.classList.remove('active');
+        }
+        menuBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        const isMobile = () => window.innerWidth <= 768;
+        document.querySelectorAll('.route-card').forEach(card => {
+            card.addEventListener('click', () => { if (isMobile()) setTimeout(closeSidebar, 300); });
+        });
+
+        // 修复手机端Leaflet地图尺寸
+        setTimeout(() => { map.invalidateSize(); }, 300);
+        window.addEventListener('resize', () => { map.invalidateSize(); });
+    </script>
+</body>
+</html>
