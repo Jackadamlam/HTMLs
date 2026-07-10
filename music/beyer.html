@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拜厄钢琴基本教程 - 图片版</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+        :root {
+            --bg: #1a1a2e;
+            --bg-card: #16213e;
+            --bg-section: #0f3460;
+            --accent: #e94560;
+            --accent-light: #ff6b6b;
+            --gold: #f0c040;
+            --text: #eee;
+            --text-dim: #aaa;
+            --border: #2a2a4a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 50%, #16213e 100%);
+            padding: 60px 20px 40px;
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 30% 50%, rgba(233,69,96,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 50%, rgba(240,192,64,0.08) 0%, transparent 50%);
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            position: relative;
+        }
+
+        /* Nav */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(22, 33, 62, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .nav a:hover, .nav a.active {
+            color: var(--accent-light);
+            border-color: var(--accent);
+            background: rgba(233,69,96,0.1);
+        }
+
+        /* Main */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            padding: 15px 20px;
+            background: var(--bg-section);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .pages {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: 400;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 8px 30px rgba(233,69,96,0.15);
+        }
+
+        .card-img {
+            width: 100%;
+            aspect-ratio: 210 / 297;
+            object-fit: contain;
+            background: #fff;
+            display: block;
+        }
+
+        .card-label {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .lightbox.open { display: flex; }
+
+        .lightbox img {
+            max-width: 90vw;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 60px rgba(0,0,0,0.5);
+        }
+
+        .lightbox-info {
+            margin-top: 15px;
+            color: var(--text-dim);
+            font-size: 1rem;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px; right: 30px;
+            color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .lightbox-close:hover { opacity: 1; }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            font-size: 2.5rem;
+            padding: 20px 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .lightbox-nav:hover { background: rgba(255,255,255,0.2); }
+        .lightbox-prev { left: 15px; }
+        .lightbox-next { right: 15px; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8rem; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+            .nav { padding: 8px 10px; gap: 5px; }
+            .nav a { font-size: 0.75rem; padding: 3px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>拜厄钢琴基本教程</h1>
+    <p>精解版 · 袁田编注 · 共95页 · 点击图片可放大浏览</p>
+</div>
+
+<nav class="nav" id="nav"></nav>
+
+<div class="main" id="main"></div>
+
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <button class="lightbox-nav lightbox-prev" onclick="navLightbox(-1)">&#8249;</button>
+    <img id="lightbox-img" src="" alt="">
+    <div class="lightbox-info" id="lightbox-info"></div>
+    <button class="lightbox-nav lightbox-next" onclick="navLightbox(1)">&#8250;</button>
+</div>
+
+<div class="footer">
+    拜厄钢琴基本教程（精解版）· 广东新世纪出版社 · 2007<br>
+    图片仅供个人学习使用
+</div>
+
+<script>
+const sections = [
+    { title: '封面 / 版权 / 序言', pages: [3,4,5,6], desc: ['封面','版权页','序言','拜厄简介'] },
+    { title: '目录 / 入门知识', pages: [7,8,9,10,11], desc: ['目录','入门知识','音符时值','拍号','识谱'] },
+    { title: '右手练习 / 左手练习 / 双手练习', pages: [12,13,14,15], desc: ['右手练习','左手练习','触键说明','双手练习'] },
+    { title: '三手联弹：主题及十二首变奏', pages: [16,17,18,19], desc: ['三手联弹说明','学生右手','教师伴奏','学生右手（续）'] },
+    { title: '三手联弹：主题及八首变奏', pages: [20,21,22,23], desc: ['学生左手','学生左手（续）','教师伴奏','学生左手（续）'] },
+    { title: '四手联弹', pages: [24,25,26,27,28,29], desc: ['四手联弹说明','Moderato','','','儿歌（教师）','学生弹奏'] },
+    { title: '新音域内的双手练习', pages: [30,31,32,33,34,35], desc: ['双手练习说明','Moderato','Allegrette','','',''] },
+    { title: '识谱及四手联弹（高音区）', pages: [36,37], desc: ['高音区（教师）',''] },
+    { title: '识谱及双手练习（低音区）', pages: [38,39,40,41], desc: ['低音区','','四手联弹（教师）','学生弹奏'] },
+    { title: '从全音符到八分音符', pages: [42,43], desc: ['节奏过渡','八度'] },
+    { title: '八分音符的双手练习', pages: [44,45,46,47,48,49,50,51,52,53], desc: ['','Moderato','','','','晚歌','','Allegro moderato','四手联弹·儿歌（教师）','学生弹奏'] },
+    { title: '音阶练习（C大调）', pages: [54,55], desc: ['C大调音阶',''] },
+    { title: '三度音程与双音练习', pages: [56,57,58,59,60], desc: ['三度音程','Moderato','','','Allegro moderato'] },
+    { title: '十六分音符及各种节奏', pages: [61,62,63,64,65,66], desc: ['爱尔兰民歌','','Allegrette','','','从全音符到十六分音符'] },
+    { title: '各种节奏、音型的双手练习', pages: [67,68,69,70,71,72,73,74,75,76,77,78,79,80], desc: ['','Moderato','','','民歌','F大调','','Allegrette','民歌','Allegro moderato','','','','民歌·可爱的五月'] },
+    { title: '半音音阶练习', pages: [81,82,83], desc: ['半音阶说明','',''] },
+    { title: '附录一：手指练习', pages: [84,85,86,87,88,89,90], desc: ['右手弹奏','','','双手并用','','分解和弦',''] },
+    { title: '附录二：24条大调和小调音阶', pages: [91,92,93,94], desc: ['','C大调c小调d小调','B大调E大调等','调的序列'] },
+    { title: '附录三', pages: [95], desc: ['版权信息'] },
+];
+
+const basePath = 'beyer/';
+let currentPageIdx = -1;
+let allPages = [];
+
+// Build nav
+const navEl = document.getElementById('nav');
+sections.forEach((s, i) => {
+    const a = document.createElement('a');
+    a.href = '#section-' + i;
+    a.textContent = s.title.length > 12 ? s.title.slice(0, 12) + '…' : s.title;
+    a.title = s.title;
+    navEl.appendChild(a);
+});
+
+// Build main
+const mainEl = document.getElementById('main');
+sections.forEach((s, si) => {
+    const section = document.createElement('div');
+    section.className = 'section';
+    section.id = 'section-' + si;
+
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.innerHTML = `${s.title} <span class="pages">第${s.pages[0]}-${s.pages[s.pages.length-1]}页</span>`;
+    section.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    s.pages.forEach((p, pi) => {
+        allPages.push({ page: p, desc: s.desc[pi] || '', section: s.title });
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.onclick = () => openLightbox(allPages.length - s.pages.length + pi);
+
+        const img = document.createElement('img');
+        img.className = 'card-img';
+        img.src = basePath + 'page_' + String(p).padStart(3, '0') + '.png';
+        img.alt = '第' + p + '页';
+        img.loading = 'lazy';
+
+        const label = document.createElement('div');
+        label.className = 'card-label';
+        label.textContent = '第' + p + '页' + (s.desc[pi] ? ' · ' + s.desc[pi] : '');
+
+        card.appendChild(img);
+        card.appendChild(label);
+        grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    mainEl.appendChild(section);
+});
+
+// Lightbox
+function openLightbox(idx) {
+    currentPageIdx = idx;
+    updateLightbox();
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function navLightbox(dir) {
+    currentPageIdx = (currentPageIdx + dir + allPages.length) % allPages.length;
+    updateLightbox();
+}
+
+function updateLightbox() {
+    const p = allPages[currentPageIdx];
+    document.getElementById('lightbox-img').src = basePath + 'page_' + String(p.page).padStart(3, '0') + '.png';
+    document.getElementById('lightbox-info').textContent = '第' + p.page + '页' + (p.desc ? ' · ' + p.desc : '') + ' · ' + p.section;
+}
+
+document.addEventListener('keydown', e => {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') navLightbox(-1);
+    if (e.key === 'ArrowRight') navLightbox(1);
+});
+
+document.getElementById('lightbox').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeLightbox();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音乐学习助手</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ========== RESET & BASE ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1a1a2e;--card:#16213e;--accent:#e94560;--gold:#f0c040;
+  --text:#e0e0e0;--text-dim:#8892b0;--text-bright:#ffffff;
+  --border:#233554;--sidebar-w:240px;--radius:10px;
+  --success:#4ecca3;--warning:#f0c040;--info:#64ffda;
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:'Noto Serif SC',serif;color:var(--text-bright)}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+input,textarea,select{font-family:inherit;outline:none}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ========== SIDEBAR ========== */
+.sidebar{
+  width:var(--sidebar-w);min-height:100vh;background:var(--card);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  position:fixed;left:0;top:0;z-index:100;transition:transform .3s;
+}
+.sidebar-header{
+  padding:24px 20px 16px;text-align:center;border-bottom:1px solid var(--border);
+}
+.sidebar-header h1{font-size:1.3rem;letter-spacing:2px}
+.sidebar-header .subtitle{font-size:.75rem;color:var(--text-dim);margin-top:4px}
+.piano-deco{display:flex;gap:2px;justify-content:center;margin-top:10px}
+.piano-deco .key-w{width:12px;height:20px;background:#fff;border-radius:0 0 3px 3px;border:1px solid #ccc}
+.piano-deco .key-b{width:8px;height:13px;background:#222;border-radius:0 0 2px 2px;margin-left:-4px;margin-right:-4px;z-index:1}
+
+.nav-list{list-style:none;flex:1;padding:12px 0}
+.nav-item a{
+  display:flex;align-items:center;gap:12px;padding:12px 24px;
+  color:var(--text-dim);font-size:.93rem;transition:all .2s;
+  border-left:3px solid transparent;
+}
+.nav-item a:hover{color:var(--text);background:rgba(233,69,96,.05)}
+.nav-item a.active{
+  color:var(--accent);background:rgba(233,69,96,.1);
+  border-left-color:var(--accent);
+}
+.nav-item .icon{font-size:1.2rem;width:24px;text-align:center}
+.sidebar-footer{
+  padding:16px 20px;border-top:1px solid var(--border);
+  font-size:.75rem;color:var(--text-dim);text-align:center;
+}
+
+/* hamburger */
+.hamburger{
+  display:none;position:fixed;top:12px;left:12px;z-index:200;
+  background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;color:var(--text);font-size:1.4rem;
+}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90}
+
+/* ========== MAIN ========== */
+.main{flex:1;margin-left:var(--sidebar-w);padding:24px 32px;min-height:100vh}
+.page-title{font-size:1.6rem;margin-bottom:24px;display:flex;align-items:center;gap:10px}
+.page-title .icon{font-size:1.4rem}
+
+/* ========== CARDS ========== */
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px 24px;margin-bottom:20px;
+}
+.card-title{font-size:1.1rem;margin-bottom:12px;color:var(--text-bright)}
+.card-grid{display:grid;gap:20px}
+.grid-2{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+
+/* ========== BUTTONS ========== */
+.btn{
+  padding:8px 20px;border-radius:6px;font-size:.88rem;font-weight:500;
+  transition:all .2s;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#d63350}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-gold{background:var(--gold);color:#1a1a2e}
+.btn-gold:hover{background:#e0b030}
+.btn-sm{padding:5px 12px;font-size:.8rem}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ========== FORM ========== */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.85rem;color:var(--text-dim);margin-bottom:6px}
+.form-input,.form-select,.form-textarea{
+  width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;color:var(--text);font-size:.9rem;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent)}
+.form-textarea{resize:vertical;min-height:70px}
+.form-inline{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+/* ========== BADGE ========== */
+.badge{
+  display:inline-block;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:500;
+}
+.badge-backlog{background:rgba(136,146,176,.2);color:var(--text-dim)}
+.badge-learning{background:rgba(233,69,96,.15);color:var(--accent)}
+.badge-singable{background:rgba(78,204,163,.15);color:var(--success)}
+.badge-band-ready{background:rgba(240,192,64,.15);color:var(--gold)}
+.badge-performed{background:rgba(100,255,218,.15);color:var(--info)}
+
+/* ========== PROGRESS BAR ========== */
+.progress-bar{
+  display:flex;gap:4px;height:8px;border-radius:4px;overflow:hidden;
+  background:rgba(255,255,255,.05);margin:12px 0;
+}
+.progress-bar .step{flex:1;border-radius:4px;transition:background .3s}
+.progress-bar .step.done{background:var(--success)}
+.progress-bar .step.current{background:var(--gold);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.progress-bar .step.future{background:rgba(255,255,255,.08)}
+
+/* ========== CHECKBOX ========== */
+.cb-item{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,.03);
+}
+.cb-item input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px}
+.cb-item label{flex:1;font-size:.9rem;cursor:pointer}
+.cb-item label.done{text-decoration:line-through;color:var(--text-dim)}
+
+/* ========== TIMER ========== */
+.timer-display{
+  font-size:2.4rem;font-weight:700;text-align:center;
+  font-variant-numeric:tabular-nums;color:var(--gold);letter-spacing:2px;
+  margin:16px 0;
+}
+.timer-btns{display:flex;gap:10px;justify-content:center}
+
+/* ========== STARS ========== */
+.stars{display:flex;gap:4px}
+.stars .star{
+  font-size:1.3rem;cursor:pointer;color:var(--border);transition:color .15s;
+}
+.stars .star.on{color:var(--gold)}
+
+/* ========== TABS ========== */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto}
+.tab{
+  padding:10px 20px;font-size:.9rem;color:var(--text-dim);
+  border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;
+  transition:all .2s;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ========== LIGHTBOX ========== */
+.lightbox{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.92);align-items:center;justify-content:center;
+}
+.lightbox.open{display:flex}
+.lightbox img{max-width:90vw;max-height:90vh;border-radius:8px}
+.lightbox-close{
+  position:absolute;top:20px;right:20px;font-size:2rem;color:#fff;
+  background:rgba(255,255,255,.1);border-radius:50%;width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+}
+.lightbox-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  font-size:2.5rem;color:#fff;background:rgba(255,255,255,.1);
+  border-radius:50%;width:48px;height:48px;display:flex;
+  align-items:center;justify-content:center;
+}
+.lightbox-nav.prev{left:20px}
+.lightbox-nav.next{right:20px}
+.lightbox-info{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  color:#fff;font-size:.9rem;background:rgba(0,0,0,.6);padding:6px 16px;border-radius:20px;
+}
+
+/* ========== THUMBNAIL GRID ========== */
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.thumb-item{
+  cursor:pointer;border-radius:8px;overflow:hidden;
+  border:2px solid var(--border);transition:border-color .2s;
+  position:relative;
+}
+.thumb-item:hover{border-color:var(--accent)}
+.thumb-item img{width:100%;display:block;aspect-ratio:3/4;object-fit:cover;background:#111}
+.thumb-item .thumb-label{
+  text-align:center;font-size:.75rem;padding:4px;
+  background:rgba(0,0,0,.6);color:var(--text-dim);
+}
+.section-title{
+  font-size:1rem;margin:20px 0 10px;padding-bottom:6px;
+  border-bottom:1px solid var(--border);color:var(--gold);
+}
+
+/* ========== STATS BOX ========== */
+.stat-box{text-align:center;padding:16px}
+.stat-num{font-size:2rem;font-weight:700;color:var(--gold)}
+.stat-label{font-size:.8rem;color:var(--text-dim);margin-top:4px}
+
+/* ========== FILTER BAR ========== */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.filter-btn{
+  padding:6px 14px;border-radius:16px;font-size:.82rem;
+  background:rgba(255,255,255,.05);color:var(--text-dim);border:1px solid transparent;
+}
+.filter-btn:hover,.filter-btn.active{color:var(--accent);border-color:var(--accent)}
+
+/* ========== QUICK ACTIONS ========== */
+.quick-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.quick-action{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:16px 20px;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);min-width:100px;transition:all .2s;
+}
+.quick-action:hover{border-color:var(--accent);transform:translateY(-2px)}
+.quick-action .qa-icon{font-size:1.8rem}
+.quick-action .qa-label{font-size:.8rem;color:var(--text-dim)}
+
+/* ========== EXPANDABLE SONG ========== */
+.song-expand{
+  max-height:0;overflow:hidden;transition:max-height .3s ease;
+  border-top:1px solid var(--border);margin-top:0;
+}
+.song-expand.open{max-height:1200px;margin-top:12px;padding-top:12px}
+.song-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.85rem}
+.song-detail-grid .label{color:var(--text-dim)}
+
+/* ========== REVIEW SECTION ========== */
+.review-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+
+/* ========== PHASE LABEL ========== */
+.phase-labels{display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-dim);margin-top:4px}
+.phase-labels span.current{color:var(--gold);font-weight:700}
+
+/* ========== RESPONSIVE ========== */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .hamburger{display:flex}
+  .overlay.open{display:block}
+  .main{margin-left:0;padding:16px;padding-top:56px}
+  .grid-2,.grid-3,.song-detail-grid{grid-template-columns:1fr}
+  .thumb-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
+}
+
+/* ========== THEORY TABLE ========== */
+.theory-table{width:100%;border-collapse:collapse;font-size:.85rem;margin:12px 0}
+.theory-table th,.theory-table td{
+  padding:8px 12px;border:1px solid var(--border);text-align:center;
+}
+.theory-table th{background:rgba(233,69,96,.1);color:var(--accent)}
+.theory-table td{color:var(--text)}
+
+/* ========== PATTERN DISPLAY ========== */
+.rhythm-pattern{
+  font-family:monospace;font-size:1.1rem;padding:12px;
+  background:var(--bg);border-radius:6px;letter-spacing:2px;
+  margin:8px 0;text-align:center;
+}
+
+/* ========== EAR TRAINING ========== */
+.exercise-log{
+  max-height:200px;overflow-y:auto;background:var(--bg);
+  border-radius:6px;padding:12px;font-size:.85rem;margin-top:8px;
+}
+.exercise-log p{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+
+/* scrollbar for lightbox */
+.lightbox::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">☰</button>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1>🎹 音乐学习</h1>
+    <div class="subtitle">Piano & Band Practice</div>
+    <div class="piano-deco">
+      <div class="key-w"></div><div class="key-b"></div><div class="key-w"></div>
+      <div class="key-b"></div><div class="key-w"></div><div class="key-w"></div>
+      <div class="key-b"></div><div class="key-w"></div><div class="key-b"></div>
+      <div class="key-w"></div><div class="key-b"></div><div class="key-w"></div>
+    </div>
+  </div>
+  <ul class="nav-list" id="navList">
+    <li class="nav-item"><a href="#/" data-route="#/"><span class="icon">🏠</span>仪表盘</a></li>
+    <li class="nav-item"><a href="#/practice" data-route="#/practice"><span class="icon">📝</span>每日练习</a></li>
+    <li class="nav-item"><a href="#/songs" data-route="#/songs"><span class="icon">🎵</span>歌曲库</a></li>
+    <li class="nav-item"><a href="#/beyer" data-route="#/beyer"><span class="icon">📖</span>拜厄教材</a></li>
+    <li class="nav-item"><a href="#/theory" data-route="#/theory"><span class="icon">🎹</span>乐理参考</a></li>
+    <li class="nav-item"><a href="#/ear" data-route="#/ear"><span class="icon">👂</span>听力训练</a></li>
+    <li class="nav-item"><a href="#/band" data-route="#/band"><span class="icon">🎸</span>乐队实战</a></li>
+    <li class="nav-item"><a href="#/review" data-route="#/review"><span class="icon">📊</span>周复盘</a></li>
+    <li class="nav-item"><a href="#/settings" data-route="#/settings"><span class="icon">⚙️</span>设置</a></li>
+  </ul>
+  <div class="sidebar-footer">Music Learning v1.0</div>
+</aside>
+
+<!-- Main Content -->
+<main class="main" id="mainContent"></main>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <button class="lightbox-nav prev" onclick="lbNav(-1)">‹</button>
+  <button class="lightbox-nav next" onclick="lbNav(1)">›</button>
+  <img id="lbImg" src="" alt="">
+  <div class="lightbox-info" id="lbInfo"></div>
+</div>
+
+<script>
+/* ============================================================
+   DATA LAYER
+   ============================================================ */
+const DATA_KEY = 'music_app_data';
+
+function defaultData(){
+  return {
+    settings:{dailyMinutes:45,weeklyDays:5,currentPhase:0,startDate:'2026-07-10'},
+    practices:{},
+    songs:{},
+    reviews:{},
+    earLogs:{},
+    bandLogs:{}
+  };
+}
+
+function loadData(){
+  try{
+    const raw=localStorage.getItem(DATA_KEY);
+    if(!raw) return defaultData();
+    const d=JSON.parse(raw);
+    return Object.assign(defaultData(),d);
+  }catch(e){return defaultData()}
+}
+
+function saveData(d){
+  localStorage.setItem(DATA_KEY,JSON.stringify(d));
+}
+
+function getData(){return loadData()}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function $(sel,ctx){return (ctx||document).querySelector(sel)}
+function $$(sel,ctx){return Array.from((ctx||document).querySelectorAll(sel))}
+
+function todayStr(){
+  const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function getWeekNumber(startDateStr, dateStr){
+  const start=new Date(startDateStr+'T00:00:00');
+  const target=new Date(dateStr+'T00:00:00');
+  const diff=Math.floor((target-start)/(7*24*60*60*1000));
+  return Math.max(0,diff)+1;
+}
+
+function getDayOfWeek(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const names=['日','一','二','三','四','五','六'];
+  return '周'+names[d.getDay()];
+}
+
+function phaseNames(){return ['入门','基础','初级','中级','高级']}
+
+function fmtMin(m){return m>=60?Math.floor(m/60)+'h'+(m%60?m%60+'m':''):m+'m'}
+
+/* ============================================================
+   WEEK 1 PLAN (pre-built)
+   ============================================================ */
+const WEEK1_PLAN=[
+  {day:'第1天',label:'认识键盘，找中央C',pages:'Beyer p8-11',items:['认识钢琴键盘布局','找到中央C的位置','右手1-2-3-4-5指位练习','左手5-4-3-2-1指位练习']},
+  {day:'第2天',label:'右手练习',pages:'Beyer p12',items:['右手C大调音阶（慢速）','右手连奏练习','注意手指独立性','节拍器60BPM']},
+  {day:'第3天',label:'左手练习',pages:'Beyer p13',items:['左手C大调音阶（慢速）','左手连奏练习','注意手腕放松','节拍器60BPM']},
+  {day:'第4天',label:'双手练习',pages:'Beyer p15',items:['双手同度练习','双手交替练习','慢速分手后合手','注意左右手协调']},
+  {day:'第5天',label:'三手联弹概念',pages:'Beyer p16',items:['理解三手联弹含义','Teacher部分识谱','Student部分识谱','分手慢练各部分']},
+  {day:'第6天',label:'三手联弹右手',pages:'Beyer p17',items:['三手联弹右手部分','注意节奏稳定性','录音对比检查','逐渐加速']},
+  {day:'第7天',label:'三手联弹左手+录音',pages:'Beyer p20-21',items:['三手联弹左手部分','双手尝试合练','完整演奏录音','回听找出问题']}
+];
+
+function getPlanForWeek(weekNum){
+  if(weekNum===1) return WEEK1_PLAN;
+  // Generate a generic plan for other weeks
+  const topics=[
+    ['复习上周内容','巩固指法','新曲目识谱'],
+    ['右手新练习','左手新练习','双手合练'],
+    ['音阶练习','琶音练习','和弦练习'],
+    ['节奏训练','听音训练','视奏练习'],
+    ['曲目精练','表演准备','录音评估'],
+    ['技巧提升','乐曲表现','综合复习'],
+    ['自由练习','创作探索','总结录音']
+  ];
+  return topics.map((t,i)=>({
+    day:'第'+(i+1)+'天',
+    label:t[Math.min(t.length-1,Math.floor(Math.random()*t.length))],
+    pages:'Beyer '+(weekNum<=4?'p'+(12+weekNum*8+i*2):'相关页码'),
+    items:t
+  }));
+}
+
+/* ============================================================
+   ROUTING
+   ============================================================ */
+let currentRoute='#/';
+let timerInterval=null;
+let timerSeconds=0;
+let timerRunning=false;
+let lbPages=[];
+let lbIndex=0;
+
+function navigate(){
+  const hash=location.hash||'#/';
+  currentRoute=hash;
+  renderPage(hash);
+  // update nav active
+  $$('#navList a').forEach(a=>{
+    a.classList.toggle('active',a.getAttribute('data-route')===hash);
+  });
+}
+
+function toggleSidebar(){
+  $('#sidebar').classList.toggle('open');
+  $('#overlay').classList.toggle('open');
+}
+
+window.addEventListener('hashchange',navigate);
+window.addEventListener('load',navigate);
+
+/* ============================================================
+   RENDER PAGE
+   ============================================================ */
+function renderPage(route){
+  const main=$('#mainContent');
+  switch(route){
+    case '#/': renderDashboard(main); break;
+    case '#/practice': renderPractice(main); break;
+    case '#/songs': renderSongs(main); break;
+    case '#/beyer': renderBeyer(main); break;
+    case '#/theory': renderTheory(main); break;
+    case '#/ear': renderEar(main); break;
+    case '#/band': renderBand(main); break;
+    case '#/review': renderReview(main); break;
+    case '#/settings': renderSettings(main); break;
+    default: renderDashboard(main);
+  }
+}
+
+/* ============================================================
+   MODULE 1: DASHBOARD
+   ============================================================ */
+function renderDashboard(el){
+  const data=getData();
+  const s=data.settings;
+  const today=todayStr();
+  const weekNum=getWeekNumber(s.startDate,today);
+  const plan=getPlanForWeek(weekNum);
+  const dayIndex=Math.min(((Math.floor((new Date(today+'T00:00:00')-new Date(s.startDate+'T00:00:00'))/(24*60*60*1000)))%7),6);
+  const todayPlan=plan[dayIndex]||plan[0];
+
+  // week stats
+  const weekStart=new Date(s.startDate+'T00:00:00');
+  const curr=new Date(today+'T00:00:00');
+  const dayOfWeek=curr.getDay()===0?6:curr.getDay()-1; // Mon=0
+  let daysPracticed=0,totalMinutes=0,songsWorked=new Set();
+  for(let i=0;i<7;i++){
+    const d=new Date(curr);d.setDate(d.getDate()-dayOfWeek+i);
+    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const pk='practice_'+ds;
+    if(data.practices[pk]&&data.practices[pk].completed){
+      daysPracticed++;
+      totalMinutes+=data.practices[pk].elapsedSeconds?Math.round(data.practices[pk].elapsedSeconds/60):data.practices[pk].minutes||0;
+    }
+  }
+  Object.values(data.songs).forEach(sv=>{if(sv.lastWorkedWeek===weekNum)songsWorked.add(sv.name)});
+
+  const phaseLabels=phaseNames();
+
+  el.innerHTML=`
+    <div class="page-title"><span class="icon">🏠</span> 仪表盘</div>
+
+    <div class="card">
+      <h3>👋 欢迎回来！${today} ${getDayOfWeek(today)}</h3>
+      <p style="color:var(--text-dim);margin-top:6px;font-size:.9rem">第 ${weekNum} 周 · 阶段 ${s.currentPhase}: ${phaseLabels[s.currentPhase]}</p>
+      <div class="progress-bar">
+        ${[0,1,2,3,4].map(p=>`<div class="step ${p<s.currentPhase?'done':p===s.currentPhase?'current':'future'}"></div>`).join('')}
+      </div>
+      <div class="phase-labels">
+        ${phaseLabels.map((n,i)=>`<span class="${i===s.currentPhase?'current':''}">${n}</span>`).join('')}
+      </div>
+    </div>
+
+    <div class="card-grid grid-3">
+      <div class="card">
+        <div class="stat-box">
+          <div class="stat-num">${daysPracticed}</div>
+          <div class="stat-label">本周已练 ${s.weeklyDays} 天目标</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stat-box">
+          <div class="stat-num">${fmtMin(totalMinutes)}</div>
+          <div class="stat-label">本周总时长</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stat-box">
+          <div class="stat-num">${songsWorked.size}</div>
+          <div class="stat-label">本周练习歌曲</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 今日练习：${todayPlan.day} - ${todayPlan.label}</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">📖 ${todayPlan.pages}</p>
+      ${todayPlan.items.map(it=>`
+        <div class="cb-item">
+          <input type="checkbox" id="dash_cb_${it.replace(/\s/g,'')}">
+          <label for="dash_cb_${it.replace(/\s/g,'')}">${it}</label>
+        </div>
+      `).join('')}
+      <div style="margin-top:12px">
+        <a href="#/practice" class="btn btn-primary btn-sm">开始今日练习 →</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🚀 今天三步走</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px">
+        <div style="flex:1;min-width:200px;padding:12px;background:var(--bg);border-radius:8px">
+          <div style="font-size:1.3rem;margin-bottom:4px">1️⃣</div>
+          <div style="font-weight:600">打开拜厄教材</div>
+          <div style="font-size:.82rem;color:var(--text-dim);margin-top:4px">看今天对应页面，识谱5分钟</div>
+        </div>
+        <div style="flex:1;min-width:200px;padding:12px;background:var(--bg);border-radius:8px">
+          <div style="font-size:1.3rem;margin-bottom:4px">2️⃣</div>
+          <div style="font-weight:600">慢速练习</div>
+          <div style="font-size:.82rem;color:var(--text-dim);margin-top:4px">节拍器50-60BPM，反复${s.dailyMinutes}分钟</div>
+        </div>
+        <div style="flex:1;min-width:200px;padding:12px;background:var(--bg);border-radius:8px">
+          <div style="font-size:1.3rem;margin-bottom:4px">3️⃣</div>
+          <div style="font-weight:600">录音回顾</div>
+          <div style="font-size:.82rem;color:var(--text-dim);margin-top:4px">录一小段，写下发现和问题</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <a href="#/practice" class="quick-action"><span class="qa-icon">📝</span><span class="qa-label">开始练习</span></a>
+      <a href="#/songs" class="quick-action"><span class="qa-icon">🎵</span><span class="qa-label">歌曲库</span></a>
+      <a href="#/beyer" class="quick-action"><span class="qa-icon">📖</span><span class="qa-label">翻教材</span></a>
+      <a href="#/theory" class="quick-action"><span class="qa-icon">🎹</span><span class="qa-label">乐理</span></a>
+      <a href="#/ear" class="quick-action"><span class="qa-icon">👂</span><span class="qa-label">听力</span></a>
+    </div>
+  `;
+}
+
+/* ============================================================
+   MODULE 2: DAILY PRACTICE
+   ============================================================ */
+function renderPractice(el){
+  const data=getData();
+  const s=data.settings;
+  const today=todayStr();
+  const weekNum=getWeekNumber(s.startDate,today);
+  const dayIndex=Math.min(((Math.floor((new Date(today+'T00:00:00')-new Date(s.startDate+'T00:00:00'))/(24*60*60*1000)))%7),6);
+
+  el.innerHTML=`
+    <div class="page-title"><span class="icon">📝</span> 每日练习</div>
+
+    <div class="card">
+      <div class="form-inline">
+        <div class="form-group" style="margin-bottom:0">
+          <label>选择日期</label>
+          <input type="date" class="form-input" id="practiceDate" value="${today}" onchange="practiceDateChanged()">
+        </div>
+        <div style="margin-top:18px;color:var(--text-dim);font-size:.85rem" id="practiceWeekInfo">第 ${weekNum} 周</div>
+      </div>
+    </div>
+
+    <div id="practiceContent"></div>
+  `;
+  practiceDateChanged();
+}
+
+function practiceDateChanged(){
+  const dateStr=$('#practiceDate').value;
+  if(!dateStr)return;
+  const data=getData();
+  const s=data.settings;
+  const weekNum=getWeekNumber(s.startDate,dateStr);
+  const plan=getPlanForWeek(weekNum);
+  const dayOfWeek=new Date(dateStr+'T00:00:00').getDay();
+  const dayIdx=dayOfWeek===0?6:dayOfWeek-1;
+  const dayPlan=plan[Math.min(dayIdx,plan.length-1)];
+  const pk='practice_'+dateStr;
+  const saved=data.practices[pk]||{};
+
+  $('#practiceWeekInfo').textContent='第 '+weekNum+' 周 · '+dayPlan.day+' · '+dayPlan.label;
+
+  const scores=saved.scores||{rhythm:0,chord:0,sing:0,memory:0,feeling:0};
+
+  let html=`
+    <div class="card-grid grid-2">
+      <div class="card">
+        <div class="card-title">🎯 今日计划：${dayPlan.label}</div>
+        <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">📖 ${dayPlan.pages}</p>
+        <div id="practiceChecklist">
+          ${dayPlan.items.map((it,i)=>{
+            const checked=saved.checklist&&saved.checklist[i]?'checked':'';
+            return `<div class="cb-item">
+              <input type="checkbox" id="pc_${i}" ${checked} onchange="practiceCheckChanged()">
+              <label for="pc_${i}" class="${checked?'done':''}">${it}</label>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⏱️ 练习计时器</div>
+        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        <div class="timer-btns">
+          <button class="btn btn-gold" onclick="timerStart()" id="btnTimerStart">▶ 开始</button>
+          <button class="btn btn-outline" onclick="timerPause()" id="btnTimerPause" disabled>⏸ 暂停</button>
+          <button class="btn btn-outline" onclick="timerStop()" id="btnTimerStop" disabled>⏹ 结束</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⭐ 今日评分</div>
+      <div class="card-grid grid-3" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
+        ${['rhythm:节奏感','chord:和弦掌握','singing:弹唱配合','memory:记忆程度','feeling:音乐感受'].map(item=>{
+          const[key,label]=item.split(':');
+          return `<div>
+            <div style="font-size:.85rem;color:var(--text-dim);margin-bottom:4px">${label}</div>
+            <div class="stars" data-key="${key}">
+              ${[1,2,3,4,5].map(n=>`<span class="star ${scores[key]>=n?'on':''}" onclick="setStar('${key}',${n})">★</span>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 练习笔记</div>
+      <div class="form-group">
+        <label>今日发现 💡</label>
+        <textarea class="form-textarea" id="practiceDiscovery" placeholder="今天练习中有什么新发现？">${saved.discovery||''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>遇到的问题 ❓</label>
+        <textarea class="form-textarea" id="practiceProblem" placeholder="哪里卡住了？">${saved.problem||''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>明天行动计划 🎯</label>
+        <textarea class="form-textarea" id="practiceTomorrow" placeholder="明天打算怎么改进？">${saved.tomorrow||''}</textarea>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:8px">
+      <button class="btn btn-primary" onclick="savePractice('${dateStr}')">💾 保存今日练习</button>
+      <span id="practiceSaveMsg" style="margin-left:12px;font-size:.85rem;color:var(--success)"></span>
+    </div>
+  `;
+
+  $('#practiceContent').innerHTML=html;
+  // restore timer if was running
+  timerSeconds=saved.elapsedSeconds||0;
+  timerRunning=false;
+  updateTimerDisplay();
+}
+
+function practiceCheckChanged(){
+  $$('#practiceChecklist input[type=checkbox]').forEach((cb,i)=>{
+    const label=cb.nextElementSibling;
+    if(label)label.classList.toggle('done',cb.checked);
+  });
+}
+
+/* Stars */
+function setStar(key,val){
+  const container=$(`.stars[data-key="${key}"]`);
+  if(!container)return;
+  container.querySelectorAll('.star').forEach((s,i)=>{
+    s.classList.toggle('on',i<val);
+  });
+}
+
+/* Timer */
+let timerRAF=null;
+function timerStart(){
+  if(timerRunning)return;
+  timerRunning=true;
+  const btnS=$('#btnTimerStart'),btnP=$('#btnTimerPause'),btnSt=$('#btnTimerStop');
+  if(btnS)btnS.disabled=true;if(btnP)btnP.disabled=false;if(btnSt)btnSt.disabled=false;
+  let lastTick=performance.now();
+  function tick(now){
+    if(!timerRunning)return;
+    const delta=Math.floor((now-lastTick)/1000);
+    if(delta>=1){
+      timerSeconds+=delta;
+      lastTick=now-(now-lastTick-delta*1000);
+      updateTimerDisplay();
+    }
+    timerRAF=requestAnimationFrame(tick);
+  }
+  timerRAF=requestAnimationFrame(tick);
+}
+
+function timerPause(){
+  timerRunning=false;
+  if(timerRAF)cancelAnimationFrame(timerRAF);
+  const btnS=$('#btnTimerStart'),btnP=$('#btnTimerPause');
+  if(btnS){btnS.disabled=false;btnS.textContent='▶ 继续'}
+  if(btnP)btnP.disabled=true;
+}
+
+function timerStop(){
+  timerRunning=false;
+  if(timerRAF)cancelAnimationFrame(timerRAF);
+  const btnS=$('#btnTimerStart'),btnP=$('#btnTimerPause'),btnSt=$('#btnTimerStop');
+  if(btnS){btnS.disabled=false;btnS.textContent='▶ 开始'}
+  if(btnP)btnP.disabled=true;if(btnSt)btnSt.disabled=true;
+}
+
+function updateTimerDisplay(){
+  const h=Math.floor(timerSeconds/3600);
+  const m=Math.floor((timerSeconds%3600)/60);
+  const s=timerSeconds%60;
+  const disp=$('#timerDisplay');
+  if(disp)disp.textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+function savePractice(dateStr){
+  const data=getData();
+  const pk='practice_'+dateStr;
+  const checklist=[];
+  $$('#practiceChecklist input[type=checkbox]').forEach(cb=>checklist.push(cb.checked));
+
+  const scores={};
+  $$('.stars').forEach(group=>{
+    const key=group.dataset.key;
+    const onCount=group.querySelectorAll('.star.on').length;
+    scores[key]=onCount;
+  });
+
+  data.practices[pk]={
+    date:dateStr,
+    completed:checklist.some(c=>c),
+    checklist,
+    scores,
+    elapsedSeconds:timerSeconds,
+    minutes:Math.round(timerSeconds/60),
+    discovery:($('#practiceDiscovery')||{}).value||'',
+    problem:($('#practiceProblem')||{}).value||'',
+    tomorrow:($('#practiceTomorrow')||{}).value||'',
+    savedAt:new Date().toISOString()
+  };
+  saveData(data);
+  const msg=$('#practiceSaveMsg');
+  if(msg){msg.textContent='✓ 已保存';setTimeout(()=>msg.textContent='',3000)}
+}
+
+/* ============================================================
+   MODULE 3: SONGS
+   ============================================================ */
+let songFilter='all';
+
+function renderSongs(el){
+  const data=getData();
+  const songs=Object.values(data.songs);
+
+  el.innerHTML=`
+    <div class="page-title"><span class="icon">🎵</span> 歌曲库</div>
+
+    <div class="card">
+      <div class="card-title">添加新歌曲</div>
+      <div class="card-grid grid-3" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
+        <div class="form-group"><label>歌曲名</label><input class="form-input" id="songName" placeholder="歌曲名"></div>
+        <div class="form-group"><label>歌手</label><input class="form-input" id="songArtist" placeholder="歌手"></div>
+        <div class="form-group"><label>调号</label><input class="form-input" id="songKey" placeholder="如 C, G, Am"></div>
+        <div class="form-group"><label>BPM</label><input class="form-input" id="songBpm" type="number" placeholder="120"></div>
+        <div class="form-group">
+          <label>难度</label>
+          <div class="stars" data-key="songDiff" id="songDiffStars">
+            <span class="star" onclick="setSongDiff(1)">★</span>
+            <span class="star" onclick="setSongDiff(2)">★</span>
+            <span class="star" onclick="setSongDiff(3)">★</span>
+            <span class="star" onclick="setSongDiff(4)">★</span>
+            <span class="star" onclick="setSongDiff(5)">★</span>
+          </div>
+        </div>
+        <div class="form-group"><label>状态</label>
+          <select class="form-select" id="songStatus">
+            <option value="backlog">待学</option><option value="learning">学习中</option>
+            <option value="singable">可弹唱</option><option value="band-ready">乐队可用</option>
+            <option value="performed">已演出</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>和弦</label><input class="form-input" id="songChords" placeholder="C Am F G ..."></div>
+      <button class="btn btn-primary" onclick="addSong()">➕ 添加歌曲</button>
+    </div>
+
+    <div class="filter-bar" id="songFilters">
+      <button class="filter-btn active" onclick="filterSongs('all')">全部 (${songs.length})</button>
+      ${['backlog:待学','learning:学习中','singable:可弹唱','band-ready:乐队可用','performed:已演出'].map(item=>{
+        const[key,label]=item.split(':');
+        const cnt=songs.filter(s=>s.status===key).length;
+        return `<button class="filter-btn" onclick="filterSongs('${key}')">${label} (${cnt})</button>`;
+      }).join('')}
+    </div>
+
+    <div id="songList">${renderSongList(songs)}</div>
+  `;
+}
+
+function renderSongList(songs){
+  const filtered=songFilter==='all'?songs:songs.filter(s=>s.status===songFilter);
+  if(!filtered.length)return '<div class="card" style="text-align:center;color:var(--text-dim)">暂无歌曲</div>';
+
+  return filtered.map((song,idx)=>`
+    <div class="card" style="cursor:pointer" onclick="toggleSongExpand(this)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div>
+          <span style="font-size:1.05rem;font-weight:600;color:var(--text-bright)">${esc(song.name)}</span>
+          <span style="color:var(--text-dim);margin-left:8px;font-size:.85rem">${esc(song.artist||'')}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:.82rem;color:var(--text-dim)">${esc(song.key||'')} ${song.bpm?song.bpm+'BPM':''}</span>
+          <div class="stars" style="pointer-events:none">${[1,2,3,4,5].map(n=>`<span class="star ${song.difficulty>=n?'on':''}">★</span>`).join('')}</div>
+          <span class="badge badge-${song.status}">${statusLabel(song.status)}</span>
+        </div>
+      </div>
+      <div class="song-expand">
+        <div class="song-detail-grid">
+          <div><span class="label">和弦:</span> ${esc(song.chords||'未填写')}</div>
+          <div><span class="label">简易版:</span> ${esc(song.simpleVersion||'未填写')}</div>
+          <div><span class="label">弹唱版:</span> ${esc(song.singalongVersion||'未填写')}</div>
+          <div><span class="label">乐队版:</span> ${esc(song.bandVersion||'未填写')}</div>
+          <div><span class="label">易错点:</span> ${esc(song.mistakes||'未填写')}</div>
+          <div><span class="label">下一步:</span> ${esc(song.nextTask||'未填写')}</div>
+          <div><span class="label">录音备注:</span> ${esc(song.recordings||'未填写')}</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editSong('${esc(song.name)}')">✏️ 编辑</button>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteSong('${esc(song.name)}')">🗑️ 删除</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+
+function statusLabel(s){
+  return{backlog:'待学',learning:'学习中',singable:'可弹唱','band-ready':'乐队可用',performed:'已演出'}[s]||s;
+}
+
+let songDiffVal=1;
+function setSongDiff(n){
+  songDiffVal=n;
+  const stars=$('#songDiffStars');
+  if(!stars)return;
+  stars.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<n));
+}
+
+function addSong(){
+  const name=$('#songName').value.trim();
+  if(!name){alert('请输入歌曲名');return}
+  const data=getData();
+  data.songs[name]={
+    name,
+    artist:$('#songArtist').value.trim(),
+    key:$('#songKey').value.trim(),
+    bpm:parseInt($('#songBpm').value)||0,
+    difficulty:songDiffVal,
+    status:$('#songStatus').value,
+    chords:$('#songChords').value.trim(),
+    simpleVersion:'',singalongVersion:'',bandVersion:'',
+    mistakes:'',nextTask:'',recordings:'',
+    lastWorkedWeek:0,
+    createdAt:new Date().toISOString()
+  };
+  saveData(data);
+  renderSongs($('#mainContent'));
+}
+
+function filterSongs(filter){
+  songFilter=filter;
+  $$('#songFilters .filter-btn').forEach((b,i)=>{
+    const keys=['all','backlog','learning','singable','band-ready','performed'];
+    b.classList.toggle('active',keys[i]===filter);
+  });
+  const data=getData();
+  const songs=Object.values(data.songs);
+  $('#songList').innerHTML=renderSongList(songs);
+}
+
+function toggleSongExpand(card){
+  const exp=card.querySelector('.song-expand');
+  if(exp)exp.classList.toggle('open');
+}
+
+function editSong(name){
+  const data=getData();
+  const song=data.songs[name];
+  if(!song)return;
+  const fields=[
+    ['artist','歌手'],['key','调号'],['bpm','BPM'],['chords','和弦'],
+    ['simpleVersion','简易版'],['singalongVersion','弹唱版'],['bandVersion','乐队版'],
+    ['mistakes','易错点'],['nextTask','下一步'],['recordings','录音备注']
+  ];
+  let html=`<div style="position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)this.remove()">`;
+  html+=`<div style="background:var(--card);border-radius:12px;padding:24px;width:90%;max-width:600px;max-height:80vh;overflow-y:auto">`;
+  html+=`<h3 style="margin-bottom:16px">编辑: ${esc(name)}</h3>`;
+  fields.forEach(([key,label])=>{
+    html+=`<div class="form-group"><label>${label}</label><input class="form-input" id="edit_${key}" value="${esc(song[key]||'')}"></div>`;
+  });
+  html+=`<div class="form-group"><label>状态</label><select class="form-select" id="edit_status">
+    ${['backlog:待学','learning:学习中','singable:可弹唱','band-ready:乐队可用','performed:已演出'].map(item=>{
+      const[k,l]=item.split(':');
+      return `<option value="${k}" ${song.status===k?'selected':''}>${l}</option>`;
+    }).join('')}
+  </select></div>`;
+  html+=`<div class="form-group"><label>难度</label><div class="stars" id="edit_diff">${[1,2,3,4,5].map(n=>`<span class="star ${song.difficulty>=n?'on':''}" onclick="editDiffClick(${n})">★</span>`).join('')}</div></div>`;
+  html+=`<div style="display:flex;gap:8px;margin-top:12px">
+    <button class="btn btn-primary" onclick="saveSongEdit('${esc(name)}')">保存</button>
+    <button class="btn btn-outline" onclick="this.closest('[style*=fixed]').remove()">取消</button>
+  </div></div></div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+let editDiffVal=1;
+function editDiffClick(n){
+  editDiffVal=n;
+  const el=$('#edit_diff');
+  if(!el)return;
+  el.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<n));
+}
+
+function saveSongEdit(name){
+  const data=getData();
+  const song=data.songs[name];
+  if(!song)return;
+  const fields=['artist','key','bpm','chords','simpleVersion','singalongVersion','bandVersion','mistakes','nextTask','recordings'];
+  fields.forEach(f=>{
+    const inp=$('#edit_'+f);
+    if(inp)song[f]=f==='bpm'?parseInt(inp.value)||0:inp.value;
+  });
+  const statusEl=$('#edit_status');
+  if(statusEl)song.status=statusEl.value;
+  song.difficulty=editDiffVal||song.difficulty;
+  saveData(data);
+  const modal=document.querySelector('[style*="position:fixed"][style*="z-index:400"]');
+  if(modal)modal.remove();
+  renderSongs($('#mainContent'));
+}
+
+function deleteSong(name){
+  if(!confirm('确定删除 "'+name+'" 吗？'))return;
+  const data=getData();
+  delete data.songs[name];
+  saveData(data);
+  renderSongs($('#mainContent'));
+}
+
+/* ============================================================
+   MODULE 4: BEYER BROWSER
+   ============================================================ */
+const BEYER_SECTIONS=[
+  {name:'封面/序言',pages:[3,4,5,6,7,8]},
+  {name:'入门知识',pages:[9,10,11,12]},
+  {name:'右手/左手/双手',pages:[12,13,14,15]},
+  {name:'三手联弹右手',pages:[16,17,18,19]},
+  {name:'三手联弹左手',pages:[20,21,22,23]},
+  {name:'四手联弹',pages:[24,25,26,27,28,29]},
+  {name:'双手练习',pages:range(30,41)},
+  {name:'八分音符',pages:range(42,53)},
+  {name:'音阶/双音',pages:range(54,60)},
+  {name:'十六分音符',pages:range(61,66)},
+  {name:'综合练习',pages:range(67,80)},
+  {name:'半音阶',pages:range(81,83)},
+  {name:'附录手指练习',pages:range(84,90)},
+  {name:'24条音阶',pages:range(91,95)}
+];
+
+function range(a,b){const r=[];for(let i=a;i<=b;i++)r.push(i);return r}
+
+function renderBeyer(el){
+  let html=`<div class="page-title"><span class="icon">📖</span> 拜厄教材</div>`;
+  BEYER_SECTIONS.forEach((sec,si)=>{
+    html+=`<div class="section-title">${sec.name}</div>`;
+    html+=`<div class="thumb-grid">`;
+    sec.pages.forEach(p=>{
+      const src='beyer/page_'+String(p).padStart(3,'0')+'.png';
+      html+=`<div class="thumb-item" onclick="openBeyerLightbox(${si},${sec.pages.indexOf(p)})">
+        <img src="${src}" alt="Page ${p}" loading="lazy" onerror="this.style.background='#333';this.alt='p${p}'">
+        <div class="thumb-label">p.${p}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+}
+
+function openBeyerLightbox(sectionIdx,pageIdx){
+  const sec=BEYER_SECTIONS[sectionIdx];
+  lbPages=sec.pages;
+  lbIndex=pageIdx;
+  showLightbox();
+}
+
+function showLightbox(){
+  const lb=$('#lightbox');
+  const img=$('#lbImg');
+  const info=$('#lbInfo');
+  const p=lbPages[lbIndex];
+  img.src='beyer/page_'+String(p).padStart(3,'0')+'.png';
+  img.alt='Page '+p;
+  info.textContent='第 '+p+' 页 · '+(lbIndex+1)+'/'+lbPages.length;
+  lb.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeLightbox(){
+  $('#lightbox').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function lbNav(dir){
+  lbIndex+=dir;
+  if(lbIndex<0)lbIndex=lbPages.length-1;
+  if(lbIndex>=lbPages.length)lbIndex=0;
+  showLightbox();
+}
+
+document.addEventListener('keydown',e=>{
+  const lb=$('#lightbox');
+  if(!lb||!lb.classList.contains('open'))return;
+  if(e.key==='Escape')closeLightbox();
+  if(e.key==='ArrowLeft')lbNav(-1);
+  if(e.key==='ArrowRight')lbNav(1);
+});
+
+/* ============================================================
+   MODULE 5: THEORY
+   ============================================================ */
+function renderTheory(el){
+  el.innerHTML=`
+    <div class="page-title"><span class="icon">🎹</span> 乐理参考</div>
+
+    <div class="tabs" id="theoryTabs">
+      <button class="tab active" onclick="switchTheoryTab(0)">音阶 Scales</button>
+      <button class="tab" onclick="switchTheoryTab(1)">和弦 Chords</button>
+      <button class="tab" onclick="switchTheoryTab(2)">和弦进行 Progressions</button>
+      <button class="tab" onclick="switchTheoryTab(3)">节奏型 Rhythms</button>
+      <button class="tab" onclick="switchTheoryTab(4)">即兴 Improvisation</button>
+    </div>
+
+    <div id="theoryContent">
+      ${renderTheoryScales()}
+      ${renderTheoryChords()}
+      ${renderTheoryProgressions()}
+      ${renderTheoryRhythms()}
+      ${renderTheoryImprov()}
+    </div>
+  `;
+  switchTheoryTab(0);
+}
+
+function switchTheoryTab(idx){
+  $$('#theoryTabs .tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  $$('#theoryContent > div').forEach((d,i)=>d.classList.toggle('active',i===idx));
+}
+
+function renderTheoryScales(){
+  return `<div class="tab-content active">
+    <div class="card">
+      <div class="card-title">🎵 C大调音阶 (C Major)</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:8px">音名: C D E F G A B C</p>
+      <table class="theory-table">
+        <tr><th>音名</th><td>C</td><td>D</td><td>E</td><td>F</td><td>G</td><td>A</td><td>B</td><td>C</td></tr>
+        <tr><th>唱名</th><td>Do</td><td>Re</td><td>Mi</td><td>Fa</td><td>Sol</td><td>La</td><td>Si</td><td>Do</td></tr>
+        <tr><th>右手</th><td>1</td><td>2</td><td>3</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+        <tr><th>左手</th><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>3</td><td>2</td><td>1</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🎵 G大调音阶 (G Major)</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:8px">音名: G A B C D E F# G · 升F</p>
+      <table class="theory-table">
+        <tr><th>音名</th><td>G</td><td>A</td><td>B</td><td>C</td><td>D</td><td>E</td><td>F#</td><td>G</td></tr>
+        <tr><th>唱名</th><td>Do</td><td>Re</td><td>Mi</td><td>Fa</td><td>Sol</td><td>La</td><td>Si</td><td>Do</td></tr>
+        <tr><th>右手</th><td>1</td><td>2</td><td>3</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+        <tr><th>左手</th><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>3</td><td>2</td><td>1</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🎵 F大调音阶 (F Major)</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:8px">音名: F G A Bb C D E F · 降B</p>
+      <table class="theory-table">
+        <tr><th>音名</th><td>F</td><td>G</td><td>A</td><td>Bb</td><td>C</td><td>D</td><td>E</td><td>F</td></tr>
+        <tr><th>唱名</th><td>Do</td><td>Re</td><td>Mi</td><td>Fa</td><td>Sol</td><td>La</td><td>Si</td><td>Do</td></tr>
+        <tr><th>右手</th><td>1</td><td>2</td><td>3</td><td>4</td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+        <tr><th>左手</th><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>3</td><td>2</td><td>1</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🎵 D大调音阶 (D Major)</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:8px">音名: D E F# G A B C# D · 升F, 升C</p>
+      <table class="theory-table">
+        <tr><th>音名</th><td>D</td><td>E</td><td>F#</td><td>G</td><td>A</td><td>B</td><td>C#</td><td>D</td></tr>
+        <tr><th>唱名</th><td>Do</td><td>Re</td><td>Mi</td><td>Fa</td><td>Sol</td><td>La</td><td>Si</td><td>Do</td></tr>
+        <tr><th>右手</th><td>1</td><td>2</td><td>3</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+        <tr><th>左手</th><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>3</td><td>2</td><td>1</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">ℹ️ 指法说明</div>
+      <p style="font-size:.85rem;color:var(--text-dim)">1=拇指 2=食指 3=中指 4=无名指 5=小指<br>穿指：1指从3/4指下穿过 · 跨指：3/4指从1指上跨过</p>
+    </div>
+  </div>`;
+}
+
+function renderTheoryChords(){
+  return `<div class="tab-content">
+    <div class="card">
+      <div class="card-title">🎹 三和弦 (Triads)</div>
+      <table class="theory-table">
+        <tr><th>类型</th><th>构成</th><th>C和弦</th><th>G和弦</th><th>F和弦</th><th>Am和弦</th></tr>
+        <tr><td>大三和弦</td><td>根+大三+纯五</td><td>C E G</td><td>G B D</td><td>F A C</td><td>-</td></tr>
+        <tr><td>小三和弦</td><td>根+小三+纯五</td><td>C Eb G</td><td>G Bb D</td><td>F Ab C</td><td>A C E</td></tr>
+        <tr><td>减三和弦</td><td>根+小三+减五</td><td>C Eb Gb</td><td>G Bb Db</td><td>F Ab Cb</td><td>A C Eb</td></tr>
+        <tr><td>增三和弦</td><td>根+大三+增五</td><td>C E G#</td><td>G B D#</td><td>F A C#</td><td>A C E#</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🎹 七和弦 (Seventh Chords)</div>
+      <table class="theory-table">
+        <tr><th>类型</th><th>符号</th><th>构成</th><th>C7</th><th>Cmaj7</th><th>Cm7</th><th>Cdim7</th></tr>
+        <tr><td>大七和弦</td><td>Cmaj7</td><td>大三+大七</td><td>-</td><td>C E G B</td><td>-</td><td>-</td></tr>
+        <tr><td>属七和弦</td><td>C7</td><td>大三+小七</td><td>C E G Bb</td><td>-</td><td>-</td><td>-</td></tr>
+        <tr><td>小七和弦</td><td>Cm7</td><td>小三+小七</td><td>-</td><td>-</td><td>C Eb G Bb</td><td>-</td></tr>
+        <tr><td>减七和弦</td><td>Cdim7</td><td>减三+减七</td><td>-</td><td>-</td><td>-</td><td>C Eb Gb Bbb</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 转位 (Inversions)</div>
+      <table class="theory-table">
+        <tr><th></th><th>原位</th><th>第一转位</th><th>第二转位</th></tr>
+        <tr><td>C</td><td>C E G</td><td>E G C</td><td>G C E</td></tr>
+        <tr><td>F</td><td>F A C</td><td>A C F</td><td>C F A</td></tr>
+        <tr><td>G</td><td>G B D</td><td>B D G</td><td>D G B</td></tr>
+        <tr><td>Am</td><td>A C E</td><td>C E A</td><td>E A C</td></tr>
+      </table>
+      <p style="font-size:.82rem;color:var(--text-dim);margin-top:8px">💡 转位可以减少手位移动，让连接更流畅</p>
+    </div>
+  </div>`;
+}
+
+function renderTheoryProgressions(){
+  return `<div class="tab-content">
+    <div class="card">
+      <div class="card-title">🔥 4536251 进行</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:8px">华语流行最经典的和弦进行</p>
+      <table class="theory-table">
+        <tr><th>级数</th><th>IV</th><th>V</th><th>iii</th><th>vi</th><th>ii</th><th>V</th><th>I</th></tr>
+        <tr><td>C调</td><td>F</td><td>G</td><td>Em</td><td>Am</td><td>Dm</td><td>G</td><td>C</td></tr>
+        <tr><td>G调</td><td>C</td><td>D</td><td>Bm</td><td>Em</td><td>Am</td><td>D</td><td>G</td></tr>
+      </table>
+      <p style="font-size:.82rem;color:var(--text-dim);margin-top:8px">歌曲示例：《晴天》《七里香》《告白气球》等</p>
+    </div>
+    <div class="card">
+      <div class="card-title">💡 1645 进行</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:8px">简单好听，适合入门弹唱</p>
+      <table class="theory-table">
+        <tr><th>级数</th><th>I</th><th>vi</th><th>IV</th><th>V</th></tr>
+        <tr><td>C调</td><td>C</td><td>Am</td><td>F</td><td>G</td></tr>
+        <tr><td>G调</td><td>G</td><td>Em</td><td>C</td><td>D</td></tr>
+      </table>
+      <p style="font-size:.82rem;color:var(--text-dim);margin-top:8px">歌曲示例：《小幸运》《童话》等</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 1564 进行</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:8px">万能进行，适用面极广</p>
+      <table class="theory-table">
+        <tr><th>级数</th><th>I</th><th>V</th><th>vi</th><th>IV</th></tr>
+        <tr><td>C调</td><td>C</td><td>G</td><td>Am</td><td>F</td></tr>
+        <tr><td>G调</td><td>G</td><td>D</td><td>Em</td><td>C</td></tr>
+      </table>
+      <p style="font-size:.82rem;color:var(--text-dim);margin-top:8px">歌曲示例：《Let It Be》《Someone Like You》等</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📖 级数对照表</div>
+      <table class="theory-table">
+        <tr><th>级数</th><th>I</th><th>ii</th><th>iii</th><th>IV</th><th>V</th><th>vi</th><th>vii°</th></tr>
+        <tr><td>C调</td><td>C</td><td>Dm</td><td>Em</td><td>F</td><td>G</td><td>Am</td><td>Bdim</td></tr>
+        <tr><td>G调</td><td>G</td><td>Am</td><td>Bm</td><td>C</td><td>D</td><td>Em</td><td>F#dim</td></tr>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderTheoryRhythms(){
+  return `<div class="tab-content">
+    <div class="card">
+      <div class="card-title">🎵 流行节奏型 (Pop)</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">4/4拍，适合大多数流行歌曲</p>
+      <div class="rhythm-pattern">| X - X - | X - X - |</div>
+      <p style="font-size:.82rem;color:var(--text-dim)">右手：每拍一次柱式和弦 · 简单稳定</p>
+      <div class="rhythm-pattern">| X . X . X . X . |</div>
+      <p style="font-size:.82rem;color:var(--text-dim)">右手：八分音符分解和弦 · 流动感</p>
+    </div>
+    <div class="card">
+      <div class="card-title">💕 抒情节奏型 (Ballad)</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">4/4拍，慢速情歌常用</p>
+      <div class="rhythm-pattern">| X - - X | X - - X |</div>
+      <p style="font-size:.82rem;color:var(--text-dim)">左手：根音-五音-八度交替 · 如《安静》</p>
+      <div class="rhythm-pattern">| X . X X . X X . |</div>
+      <p style="font-size:.82rem;color:var(--text-dim)">左手：根-五-八五分解 · 如《蒲公英的约定》</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🎸 摇滚节奏型 (Rock)</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">4/4拍，强调反拍</p>
+      <div class="rhythm-pattern">| X . X . X . X . |</div>
+      <p style="font-size:.82rem;color:var(--text-dim)">右手：重音在2、4拍 · 强力和弦(Power Chord)</p>
+      <div class="rhythm-pattern">| X-X . X . X-X . |</div>
+      <p style="font-size:.82rem;color:var(--text-dim)">右手：附点+切分 · 摇滚律动感</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🎹 伴奏织体建议</div>
+      <table class="theory-table">
+        <tr><th>风格</th><th>左手</th><th>右手</th><th>BPM范围</th></tr>
+        <tr><td>抒情</td><td>分解和弦</td><td>柱式/旋律</td><td>60-80</td></tr>
+        <tr><td>流行</td><td>根音+五音</td><td>分解/柱式</td><td>90-120</td></tr>
+        <tr><td>摇滚</td><td>根音八度</td><td>强力和弦</td><td>120-160</td></tr>
+        <tr><td>民谣</td><td>低音+三音</td><td>指弹分解</td><td>80-110</td></tr>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderTheoryImprov(){
+  return `<div class="tab-content">
+    <div class="card">
+      <div class="card-title">🎵 五声音阶 (Pentatonic Scale)</div>
+      <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">即兴入门首选，五个音怎么弹都好听</p>
+      <table class="theory-table">
+        <tr><th>音名</th><td>C</td><td>D</td><td>E</td><td>G</td><td>A</td></tr>
+        <tr><th>唱名</th><td>Do</td><td>Re</td><td>Mi</td><td>Sol</td><td>La</td></tr>
+        <tr><th>指法(R)</th><td>1</td><td>2</td><td>3</td><td>1</td><td>2</td></tr>
+      </table>
+      <p style="font-size:.82rem;color:var(--text-dim);margin-top:8px">C大调五声音阶：去掉了Fa和Si，避免不协和音</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🎹 即兴练习步骤</div>
+      <div style="font-size:.9rem;line-height:2">
+        <strong>第1步：</strong>选一个和弦进行（如C-Am-F-G）<br>
+        <strong>第2步：</strong>左手弹柱式和弦，右手弹五声音阶<br>
+        <strong>第3步：</strong>从长音开始，每个音弹2拍<br>
+        <strong>第4步：</strong>加入节奏变化，尝试附点和切分<br>
+        <strong>第5步：</strong>尝试"留白"——不是每个拍都弹音<br>
+        <strong>第6步：</strong>录下来，回听找到喜欢的片段
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">💡 即兴小技巧</div>
+      <ul style="font-size:.88rem;line-height:2.2;list-style:none">
+        <li>✅ 用"呼吸引导"——长音时深吸气，乐句间留空间</li>
+        <li>✅ 重复一个好听的动机（Motif），变化发展</li>
+        <li>✅ 先从一个音开始，逐渐丰富</li>
+        <li>✅ 听歌时注意歌手的旋律走向，模仿学习</li>
+        <li>✅ 用不同的力度（轻/重）表达情感</li>
+        <li>❌ 不要一开始就弹很快</li>
+        <li>❌ 不要每个音都弹，留白也很重要</li>
+      </ul>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   MODULE 6: EAR TRAINING
+   ============================================================ */
+function renderEar(el){
+  const data=getData();
+  const logs=data.earLogs||{};
+
+  el.innerHTML=`
+    <div class="page-title"><span class="icon">👂</span> 听力训练</div>
+
+    <div class="card-grid grid-3">
+      <div class="card">
+        <div class="card-title">🎯 根音听辨</div>
+        <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">
+          听单音，判断音名。先从C大调白键开始，逐步加入黑键。
+        </p>
+        <div class="form-group">
+          <label>今日练习记录</label>
+          <div class="form-inline">
+            <input class="form-input" id="earRootInput" placeholder="练习内容" style="flex:1">
+            <input class="form-input" id="earRootScore" placeholder="正确率" type="number" style="width:80px" min="0" max="100">
+            <span style="font-size:.82rem;color:var(--text-dim)">%</span>
+            <button class="btn btn-primary btn-sm" onclick="addEarLog('root')">记录</button>
+          </div>
+        </div>
+        <div class="exercise-log" id="earRootLog">${renderEarLogEntries(logs.root||[])}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎹 大小和弦听辨</div>
+        <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">
+          听和弦，判断大三/小三。注意色彩差异：大三明亮，小三暗淡。
+        </p>
+        <div class="form-group">
+          <label>今日练习记录</label>
+          <div class="form-inline">
+            <input class="form-input" id="earChordInput" placeholder="练习内容" style="flex:1">
+            <input class="form-input" id="earChordScore" placeholder="正确率" type="number" style="width:80px" min="0" max="100">
+            <span style="font-size:.82rem;color:var(--text-dim)">%</span>
+            <button class="btn btn-primary btn-sm" onclick="addEarLog('chord')">记录</button>
+          </div>
+        </div>
+        <div class="exercise-log" id="earChordLog">${renderEarLogEntries(logs.chord||[])}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎵 和弦进行听辨</div>
+        <p style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">
+          听和弦走向，判断级数。先练1645，再练4536251。
+        </p>
+        <div class="form-group">
+          <label>今日练习记录</label>
+          <div class="form-inline">
+            <input class="form-input" id="earProgInput" placeholder="练习内容" style="flex:1">
+            <input class="form-input" id="earProgScore" placeholder="正确率" type="number" style="width:80px" min="0" max="100">
+            <span style="font-size:.82rem;color:var(--text-dim)">%</span>
+            <button class="btn btn-primary btn-sm" onclick="addEarLog('prog')">记录</button>
+          </div>
+        </div>
+        <div class="exercise-log" id="earProgLog">${renderEarLogEntries(logs.prog||[])}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 听力训练建议</div>
+      <ul style="font-size:.9rem;line-height:2;list-style:none">
+        <li>🔊 每天10-15分钟，用耳机效果更好</li>
+        <li>🎯 先听根音，再听音程关系，最后听整体色彩</li>
+        <li>📱 推荐App：EarMaster, Functional Ear Trainer, 完美耳朵</li>
+        <li>🎹 边弹边听，用钢琴验证你的判断</li>
+        <li>🔄 多次重复同一组，建立肌肉记忆</li>
+      </ul>
+    </div>
+  `;
+}
+
+function renderEarLogEntries(entries){
+  if(!entries||!entries.length)return '<p style="color:var(--text-dim);font-size:.82rem">暂无记录</p>';
+  return entries.slice(-20).reverse().map(e=>`
+    <p><span style="color:var(--gold)">${e.date}</span> · ${esc(e.content)} · <span style="color:var(--success)">${e.score}%</span></p>
+  `).join('');
+}
+
+function addEarLog(type){
+  const input=$('#ear'+capitalize(type)+'Input');
+  const score=$('#ear'+capitalize(type)+'Score');
+  if(!input||!input.value.trim())return;
+  const data=getData();
+  if(!data.earLogs)data.earLogs={};
+  if(!data.earLogs[type])data.earLogs[type]=[];
+  data.earLogs[type].push({
+    date:todayStr(),
+    content:input.value.trim(),
+    score:parseInt(score&&score.value)||0,
+    time:new Date().toISOString()
+  });
+  saveData(data);
+  input.value='';
+  if(score)score.value='';
+  const log=$('#ear'+capitalize(type)+'Log');
+  if(log)log.innerHTML=renderEarLogEntries(data.earLogs[type]);
+}
+
+function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+
+/* ============================================================
+   MODULE 7: BAND
+   ============================================================ */
+function renderBand(el){
+  const data=getData();
+  const logs=data.bandLogs||[];
+
+  el.innerHTML=`
+    <div class="page-title"><span class="icon">🎸</span> 乐队实战</div>
+
+    <div class="card-grid grid-2">
+      <div class="card">
+        <div class="card-title">🎛️ 音色选择</div>
+        <table class="theory-table">
+          <tr><th>场景</th><th>音色</th><th>特点</th></tr>
+          <tr><td>抒情</td><td>Grand Piano / Soft Pad</td><td>温暖柔和</td></tr>
+          <tr><td>流行</td><td>Bright Piano / E.Piano</td><td>明亮清晰</td></tr>
+          <tr><td>摇滚</td><td>Overdrive Piano / Organ</td><td>力度感强</td></tr>
+          <tr><td>民谣</td><td>Acoustic Piano</td><td>自然真实</td></tr>
+          <tr><td>爵士</td><td>Rhodes / Wurlitzer</td><td>复古质感</td></tr>
+          <tr><td>电子</td><td>Synth Pad / Lead</td><td>现代电子</td></tr>
+        </table>
+        <p style="font-size:.82rem;color:var(--text-dim);margin-top:8px">💡 先用原声钢琴练熟，演出时再换音色</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🥁 与鼓手配合</div>
+        <ul style="font-size:.88rem;line-height:2;list-style:none">
+          <li>🎯 <strong>对齐节拍：</strong>以军鼓(Snare)的2、4拍为参照</li>
+          <li>🎵 <strong>卡拍练习：</strong>左手弹根音跟底鼓(Kick)</li>
+          <li>⏸️ <strong>留白配合：</strong>鼓fill时钢琴适当减力或留白</li>
+          <li>📈 <strong>动态呼应：</strong>鼓加大音量时跟上，轻柔段减力</li>
+          <li>🔄 <strong>段落同步：</strong>间奏/尾奏和鼓手眼神确认</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎸 与贝斯手配合</div>
+        <ul style="font-size:.88rem;line-height:2;list-style:none">
+          <li>🎵 <strong>错开频段：</strong>贝斯弹低音区，你弹中高音区</li>
+          <li>🎼 <strong>和声互补：</strong>贝斯弹根音时你可以弹转位和弦</li>
+          <li>⏱️ <strong>节奏互补：</strong>贝斯走Walking时钢琴可以简化</li>
+          <li>🤝 <strong>互相让位：</strong>Solo段落时另一方做铺底</li>
+          <li>📍 <strong>共同锚点：</strong>每小节第一个音一起对齐</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 排练沟通清单</div>
+        <ul style="font-size:.88rem;line-height:2.2;list-style:none">
+          <li>✅ 确认每首歌的Key和BPM</li>
+          <li>✅ 讨论编曲版本（原版/简化/改编）</li>
+          <li>✅ 标记Intro/Verse/Chorus/Bridge/Outro</li>
+          <li>✅ 确认谁Solo、谁铺底</li>
+          <li>✅ 练习Ending（渐弱/干脆结束/延长音）</li>
+          <li>✅ 录音后一起听，找问题</li>
+          <li>✅ 记录每首歌需要改进的地方</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 排练日志</div>
+      <div class="form-group">
+        <label>日期</label>
+        <input type="date" class="form-input" id="bandLogDate" value="${todayStr()}" style="max-width:200px">
+      </div>
+      <div class="form-group">
+        <label>排练内容</label>
+        <textarea class="form-textarea" id="bandLogContent" placeholder="今天排练了什么？遇到什么问题？"></textarea>
+      </div>
+      <div class="form-group">
+        <label>改进计划</label>
+        <textarea class="form-textarea" id="bandLogPlan" placeholder="下次排练需要改进什么？"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveBandLog()">💾 保存排练日志</button>
+      <div style="margin-top:16px">
+        ${logs.slice(-10).reverse().map(l=>`
+          <div class="card" style="padding:12px 16px;margin-bottom:8px">
+            <div style="font-size:.82rem;color:var(--gold);margin-bottom:4px">${esc(l.date)}</div>
+            <div style="font-size:.88rem;margin-bottom:4px">${esc(l.content)}</div>
+            ${l.plan?`<div style="font-size:.82rem;color:var(--text-dim)">🎯 ${esc(l.plan)}</div>`:''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function saveBandLog(){
+  const content=$('#bandLogContent').value.trim();
+  if(!content){alert('请输入排练内容');return}
+  const data=getData();
+  if(!data.bandLogs)data.bandLogs=[];
+  data.bandLogs.push({
+    date:$('#bandLogDate').value,
+    content,
+    plan:$('#bandLogPlan').value.trim(),
+    savedAt:new Date().toISOString()
+  });
+  saveData(data);
+  renderBand($('#mainContent'));
+}
+
+/* ============================================================
+   MODULE 8: WEEKLY REVIEW
+   ============================================================ */
+function renderReview(el){
+  const data=getData();
+  const s=data.settings;
+  const today=todayStr();
+  const currentWeek=getWeekNumber(s.startDate,today);
+  const weekKey='review_'+currentWeek;
+  const saved=data.reviews[weekKey]||{};
+
+  // Calculate stats for current week
+  const startDate=new Date(s.startDate+'T00:00:00');
+  const todayDate=new Date(today+'T00:00:00');
+  const dayOfWeek=todayDate.getDay()===0?6:todayDate.getDay()-1;
+  const weekStart=new Date(todayDate);weekStart.setDate(weekStart.getDate()-dayOfWeek);
+
+  let daysPracticed=0,totalMinutes=0,songsWorked=new Set();
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(d.getDate()+i);
+    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const pk='practice_'+ds;
+    if(data.practices[pk]){
+      if(data.practices[pk].completed)daysPracticed++;
+      totalMinutes+=data.practices[pk].elapsedSeconds?Math.round(data.practices[pk].elapsedSeconds/60):data.practices[pk].minutes||0;
+    }
+  }
+  Object.values(data.songs).forEach(sv=>{if(sv.lastWorkedWeek===currentWeek)songsWorked.add(sv.name)});
+
+  el.innerHTML=`
+    <div class="page-title"><span class="icon">📊</span> 周复盘</div>
+
+    <div class="card">
+      <div class="form-inline">
+        <div class="form-group" style="margin-bottom:0">
+          <label>选择周数</label>
+          <select class="form-select" id="reviewWeek" onchange="reviewWeekChanged()" style="min-width:140px">
+            ${Array.from({length:currentWeek},(_,i)=>i+1).map(w=>`<option value="${w}" ${w===currentWeek?'selected':''}>第 ${w} 周</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="review-stats card-grid grid-4">
+      <div class="card"><div class="stat-box"><div class="stat-num">${daysPracticed}</div><div class="stat-label">练习天数</div></div></div>
+      <div class="card"><div class="stat-box"><div class="stat-num">${fmtMin(totalMinutes)}</div><div class="stat-label">总练习时长</div></div></div>
+      <div class="card"><div class="stat-box"><div class="stat-num">${songsWorked.size}</div><div class="stat-label">练习歌曲数</div></div></div>
+      <div class="card"><div class="stat-box"><div class="stat-num">${daysPracticed>=s.weeklyDays?'✅':'⚠️'}</div><div class="stat-label">达标情况</div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 本周复盘</div>
+      <div class="form-group">
+        <label>🚧 最大瓶颈</label>
+        <textarea class="form-textarea" id="reviewBottleneck" placeholder="本周最大的困难是什么？">${saved.bottleneck||''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>🎯 下周目标</label>
+        <textarea class="form-textarea" id="reviewGoal" placeholder="下周想达成什么？">${saved.goal||''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>🛑 要停止做什么</label>
+        <textarea class="form-textarea" id="reviewStop" placeholder="什么事情在浪费时间？">${saved.stop||''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>💡 本周最大收获</label>
+        <textarea class="form-textarea" id="reviewWin" placeholder="本周最让自己开心的进步是什么？">${saved.win||''}</textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveReview()">💾 保存复盘</button>
+      <span id="reviewSaveMsg" style="margin-left:12px;font-size:.85rem;color:var(--success)"></span>
+    </div>
+  `;
+}
+
+function reviewWeekChanged(){
+  const weekNum=parseInt($('#reviewWeek').value);
+  const data=getData();
+  const key='review_'+weekNum;
+  const saved=data.reviews[key]||{};
+  if($('#reviewBottleneck'))$('#reviewBottleneck').value=saved.bottleneck||'';
+  if($('#reviewGoal'))$('#reviewGoal').value=saved.goal||'';
+  if($('#reviewStop'))$('#reviewStop').value=saved.stop||'';
+  if($('#reviewWin'))$('#reviewWin').value=saved.win||'';
+}
+
+function saveReview(){
+  const weekNum=$('#reviewWeek').value;
+  const data=getData();
+  data.reviews['review_'+weekNum]={
+    week:parseInt(weekNum),
+    bottleneck:($('#reviewBottleneck')||{}).value||'',
+    goal:($('#reviewGoal')||{}).value||'',
+    stop:($('#reviewStop')||{}).value||'',
+    win:($('#reviewWin')||{}).value||'',
+    savedAt:new Date().toISOString()
+  };
+  saveData(data);
+  const msg=$('#reviewSaveMsg');
+  if(msg){msg.textContent='✓ 已保存';setTimeout(()=>msg.textContent='',3000)}
+}
+
+/* ============================================================
+   MODULE 9: SETTINGS
+   ============================================================ */
+function renderSettings(el){
+  const data=getData();
+  const s=data.settings;
+
+  el.innerHTML=`
+    <div class="page-title"><span class="icon">⚙️</span> 设置</div>
+
+    <div class="card-grid grid-2">
+      <div class="card">
+        <div class="card-title">📋 练习设置</div>
+        <div class="form-group">
+          <label>每日练习目标 (分钟)</label>
+          <select class="form-select" id="setDaily">
+            ${[45,60,75,90].map(m=>`<option value="${m}" ${s.dailyMinutes===m?'selected':''}>${m} 分钟</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>每周练习天数</label>
+          <select class="form-select" id="setWeeklyDays">
+            ${[3,4,5,6,7].map(d=>`<option value="${d}" ${s.weeklyDays===d?'selected':''}>${d} 天</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>当前学习阶段</label>
+          <select class="form-select" id="setPhase">
+            ${phaseNames().map((n,i)=>`<option value="${i}" ${s.currentPhase===i?'selected':''}>阶段 ${i}: ${n}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>开始日期</label>
+          <input type="date" class="form-input" id="setStartDate" value="${s.startDate}">
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 保存设置</button>
+        <span id="settingsSaveMsg" style="margin-left:12px;font-size:.85rem;color:var(--success)"></span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📦 数据管理</div>
+        <p style="font-size:.88rem;color:var(--text-dim);margin-bottom:16px">
+          所有数据存储在浏览器本地（localStorage）。建议定期备份。
+        </p>
+        <div class="btn-group">
+          <button class="btn btn-gold" onclick="exportData()">📥 导出数据 (JSON)</button>
+          <button class="btn btn-outline" onclick="importDataClick()">📤 导入数据</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:.85rem;color:var(--text-dim);margin-bottom:8px">📊 数据统计</div>
+          <div style="font-size:.88rem">
+            练习记录: <strong style="color:var(--gold)">${Object.keys(data.practices).length}</strong> 条<br>
+            歌曲数量: <strong style="color:var(--gold)">${Object.keys(data.songs).length}</strong> 首<br>
+            周复盘: <strong style="color:var(--gold)">${Object.keys(data.reviews).length}</strong> 条<br>
+            听力日志: <strong style="color:var(--gold)">${Object.values(data.earLogs||{}).reduce((a,b)=>a+b.length,0)}</strong> 条<br>
+            排练日志: <strong style="color:var(--gold)">${(data.bandLogs||[]).length}</strong> 条
+          </div>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+          <button class="btn btn-outline" style="border-color:var(--accent);color:var(--accent)" onclick="if(confirm('确定要清除所有数据吗？此操作不可恢复！')){localStorage.removeItem('${DATA_KEY}');location.reload()}">🗑️ 清除所有数据</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveSettings(){
+  const data=getData();
+  data.settings.dailyMinutes=parseInt($('#setDaily').value);
+  data.settings.weeklyDays=parseInt($('#setWeeklyDays').value);
+  data.settings.currentPhase=parseInt($('#setPhase').value);
+  data.settings.startDate=$('#setStartDate').value;
+  saveData(data);
+  const msg=$('#settingsSaveMsg');
+  if(msg){msg.textContent='✓ 已保存';setTimeout(()=>msg.textContent='',3000)}
+}
+
+function exportData(){
+  const data=getData();
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='music_app_data_'+todayStr()+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importDataClick(){
+  const f=$('#importFile');if(f)f.click();
+}
+
+function importData(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(!imported.settings||!imported.practices){alert('文件格式不正确');return}
+      if(!confirm('导入将覆盖当前所有数据，确定继续吗？'))return;
+      saveData(imported);
+      alert('导入成功！');
+      location.reload();
+    }catch(err){
+      alert('解析失败: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+navigate();
+</script>
+</body>
+</html>
