@@ -74,6 +74,8 @@
     .badge-music { background: rgba(236,72,153,0.2); color: #ec4899; }
     .badge-travel { background: rgba(34,197,94,0.2); color: #22c55e; }
     .badge-life { background: rgba(20,184,166,0.2); color: #2dd4bf; }
+    .private-card { position: relative; }
+    .private-card::after { content: "LOCKED"; position: absolute; top: 12px; right: 12px; color: #fbbf24; font-size: 0.6em; letter-spacing: 0.12em; }
   </style>
 </head>
 <body>
@@ -96,17 +98,17 @@
         <p>Complete PMOS Handbook</p>
         <span class="badge badge-book">Handbook</span>
       </a>
-      <a href="music/index.html" class="card">
+      <a href="music/index.html" class="card private-card">
         <h2>Music</h2>
         <p>Keyboard Learning System</p>
         <span class="badge badge-music">Music</span>
       </a>
-      <a href="travel.html" class="card">
+      <a href="travel.html" class="card private-card">
         <h2>Travel</h2>
         <p>山水自驾环游图</p>
         <span class="badge badge-travel">Travel</span>
       </a>
-      <a href="northstar/" class="card">
+      <a href="northstar/" class="card private-card">
         <h2>Northstar</h2>
         <p>Life Strategy Corrector</p>
         <span class="badge badge-life">Personal Tool</span>
