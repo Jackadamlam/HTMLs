@@ -1,7 +1,6 @@
 (function () {
   "use strict";
 
-  const SESSION_KEY = "jack-private-access-v1";
   const EXPECTED_HASH = "c59e6a3d54fe04f4ddebfcadb5df34d9c74a70101e124cfb331f32b376531f4e";
   const SALT = "northstar-v1:";
   const REDIRECT_URL = document.currentScript && document.currentScript.dataset.redirect;
@@ -31,16 +30,6 @@
   document.documentElement.classList.add("access-locked");
   document.head.appendChild(guardStyle);
 
-  if (sessionStorage.getItem(SESSION_KEY) === EXPECTED_HASH) {
-    if (REDIRECT_URL) {
-      window.location.replace(REDIRECT_URL);
-      return;
-    }
-    document.documentElement.classList.remove("access-locked");
-    guardStyle.remove();
-    return;
-  }
-
   async function hashPassword(value) {
     const bytes = new TextEncoder().encode(SALT + value);
     const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -48,7 +37,6 @@
   }
 
   function unlock(root) {
-    sessionStorage.setItem(SESSION_KEY, EXPECTED_HASH);
     if (REDIRECT_URL) {
       window.location.replace(REDIRECT_URL);
       return;
@@ -66,7 +54,7 @@
         <div class="access-gate-mark" aria-hidden="true">J</div>
         <p class="access-gate-kicker">PRIVATE PAGE</p>
         <h1 id="access-gate-title">此页面需要密码</h1>
-        <p class="access-gate-copy">请输入访问密码。验证通过后，本次浏览器会话内可继续访问三个私人页面。</p>
+        <p class="access-gate-copy">请输入访问密码。Music、Travel 与 Northstar 每次进入都需要独立验证。</p>
         <form id="access-gate-form">
           <label class="access-gate-label" for="access-gate-password">访问密码</label>
           <div class="access-gate-row">
