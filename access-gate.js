@@ -4,6 +4,7 @@
   const SESSION_KEY = "jack-private-access-v1";
   const EXPECTED_HASH = "c59e6a3d54fe04f4ddebfcadb5df34d9c74a70101e124cfb331f32b376531f4e";
   const SALT = "northstar-v1:";
+  const REDIRECT_URL = document.currentScript && document.currentScript.dataset.redirect;
   const guardStyle = document.createElement("style");
   guardStyle.id = "access-gate-guard";
   guardStyle.textContent = `
@@ -31,6 +32,10 @@
   document.head.appendChild(guardStyle);
 
   if (sessionStorage.getItem(SESSION_KEY) === EXPECTED_HASH) {
+    if (REDIRECT_URL) {
+      window.location.replace(REDIRECT_URL);
+      return;
+    }
     document.documentElement.classList.remove("access-locked");
     guardStyle.remove();
     return;
@@ -44,6 +49,10 @@
 
   function unlock(root) {
     sessionStorage.setItem(SESSION_KEY, EXPECTED_HASH);
+    if (REDIRECT_URL) {
+      window.location.replace(REDIRECT_URL);
+      return;
+    }
     document.documentElement.classList.remove("access-locked");
     guardStyle.remove();
     root.remove();
